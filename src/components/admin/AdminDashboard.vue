@@ -17,7 +17,7 @@
             variant="outlined"
             prepend-icon="mdi-filter"
           >
-            {{ formatDate(selectedDate) || "เลือกช่วงเวลา" }}
+            {{ formatDate(selectedDate) || "เลือก" }}
           </v-btn>
         </template>
         <v-date-picker
