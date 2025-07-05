@@ -1,150 +1,99 @@
 <template>
   <v-app>
-    <v-main class="login-background">
-      <v-container class="fill-height d-flex align-center justify-center" fluid>
-        <v-row align="center" justify="center">
-          <v-col cols="12" sm="8" md="4">
-            <!-- Header -->
-            <div class="d-flex align-center justify-center mb-4 logo-header">
-              <v-img src="/logo_mfu.png" max-width="55" class="mr-2" />
-              <div class="d-flex align-center">
-                <div class="separator-line mx-2"></div>
-                <h2 class="title-text">Counselling Queue </h2>
-              </div>
-            </div>
+    <v-main class="main-bg">
+      <v-container class="fill-height d-flex align-center justify-center">
+        <v-card class="center-card text-center px-8 py-10" elevation="0">
+          <!-- Logo -->
+          <v-img src="/logo_mfu.png" max-width="100" class="mx-auto mb-4" />
 
-            <!-- Login Card -->
-            <v-card flat class="pa-6 login-card text-left">
-              <h3 class="font-weight-bold mb-4">Sign in</h3>
+          <!-- Title -->
+          <h2 class="thai-title">ระบบจองคิวเข้ารับการให้คำปรึกษา</h2>
+          <h3 class="eng-title font-weight-bold mb-6">Counselling Queue Booking</h3>
 
-              <v-text-field v-model="studentId" label="Student ID" outlined dense class="mb-3 custom-field" />
-              <v-text-field v-model="password" label="Password" type="password" outlined dense
-                class="mb-3 custom-field" />
-              <v-checkbox v-model="remember" label="Remember me" dense class="mb-4" />
+          <!-- Role Buttons -->
+          <v-row justify="center" align="center" dense no-gutters>
+            <v-col cols="6" class="d-flex justify-end pr-5">
+              <v-card class="role-box" elevation="2" @click="goToLogin('student')">
+                <v-icon size="70" color="#00293f" class="mb-1">mdi-school</v-icon>
+                <div class="role-label">Student</div>
+                <div class="role-sub">นักศึกษา</div>
+              </v-card>
+            </v-col>
 
-              <!-- Buttons -->
-              <div class="d-flex align-center">
-                <v-btn class="sign-in-btn" height="36" @click="signIn">
-                  SIGN IN
-                </v-btn>
-
-                <v-btn class="google-icon-btn ml-3" icon height="36" width="36" @click="signInWithGoogle">
-                  <v-icon color="red">mdi-google</v-icon>
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
+            <v-col cols="6" class="d-flex justify-start pl-5">
+              <v-card class="role-box" elevation="2" @click="goToLogin('admin')">
+                <v-icon size="70" color="#00293f" class="mb-1">mdi-account-tie</v-icon>
+                <div class="role-label">Admin</div>
+                <div class="role-sub">เจ้าหน้าที่</div>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card>
       </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-
+import { useRouter } from 'vue-router';
 const router = useRouter();
 
-const studentId = ref("");
-const password = ref("");
-const remember = ref(false);
-
-// ข้อมูลจำลองสำหรับทดสอบ
-const mockUsers = [
-  { studentId: "6531501077", password: "1234567", role: "user" },
-  { studentId: "admin001", password: "adminpass", role: "admin" },
-  { studentId: "staff001", password: "staffpass", role: "staff" }
-];
-
-const signIn = () => {
-  const found = mockUsers.find(
-    (user) =>
-      user.studentId === studentId.value && user.password === password.value
-  );
-
-  if (found) {
-    if (found.role === "user") router.push("/user/appointment");
-    else if (found.role === "admin") router.push("/admin/AdminRequest");
-    else if (found.role === "staff") router.push("/staff/StaffRequest");
-  } else {
-    alert("Invalid student ID or password.");
-  }
-};
-
-const signInWithGoogle = () => {
-  alert("Google Sign-In is disabled in mock mode.");
+const goToLogin = (role) => {
+  router.push({ name: 'Login', query: { role } });
 };
 </script>
 
 <style scoped>
-.custom-field .v-input__control {
-  border: 2px solid white !important;
-  border-radius: 100px !important;
-  background-color: rgba(255, 255, 255, 0.15);
-  /* สีพื้นหลังโปร่งใส */
-  padding: 6px 12px;
-}
-
-.custom-field input {
-  color: white !important;
-}
-
-.custom-field .v-label {
-  color: white !important;
-}
-
-.custom-field .v-field__outline {
-  border: none !important;
-  /* ซ่อน outline เดิมของ vuetify */
-}
-
-.login-background {
+.main-bg {
   background-color: #008d94;
   height: 100vh;
   color: white;
 }
 
-.title-text {
-  font-size: 18px;
-  font-weight: bold;
-  color: white;
-  white-space: nowrap;
-}
-
-.separator-line {
-  width: 1px;
-  height: 40px;
-  background-color: white;
-}
-
-.login-card {
-  background-color: transparent;
-  box-shadow: none;
-  color: white;
-}
-
-.v-input input {
-  background-color: #e0f7fa !important;
-  /* สีพื้นหลังที่สว่างขึ้น */
-  color: #000 !important;
+.center-card {
+  background-color: #2bb4b8;
   border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
 }
 
-.v-label {
-  color: #ffffff;
+.thai-title {
+  font-size: 25px;
+  color: white;
+  margin-bottom: 4px;
 }
 
-.sign-in-btn {
+.eng-title {
+  font-size: 25px;
+  color: white;
+}
+
+.role-box {
   background-color: white;
-  color: #555;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 170px;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.role-box:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.role-label {
+  font-size: 20px;
   font-weight: bold;
-  text-transform: none;
-  min-width: 100px;
+  color: #00293f;
+  margin-top: 2px;
 }
 
-.google-icon-btn {
-  background-color: white;
-  border: 1px solid #ccc;
+.role-sub {
+  font-size: 17px;
+  color: #666;
 }
 </style>
