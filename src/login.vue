@@ -9,7 +9,7 @@
               <v-img src="/logo_mfu.png" max-width="55" class="mr-2" />
               <div class="d-flex align-center">
                 <div class="separator-line mx-2"></div>
-                <h2 class="title-text">Counselling Queue Booking</h2>
+                <h2 class="title-text">Counselling Queue </h2>
               </div>
             </div>
 
