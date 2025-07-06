@@ -39,8 +39,8 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const goToLogin = (role) => {
--  router.push({ name: 'Login', query: { role } });
-+  router.push({ name: 'login1', query: { role } });
+-  router.push({ name: 'home', query: { role } });
++  router.push({ name: 'home', query: { role } });
 };
 </script>
 
