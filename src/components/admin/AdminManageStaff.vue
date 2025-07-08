@@ -3,7 +3,7 @@
     <!-- ส่วนจัดการบุคลากร -->
     <v-row justify="space-between" align="center" class="mb-4">
       <h2 class="text-h6 font-weight-bold">จัดการบุคลากร</h2>
-      <v-btn color="red" prepend-icon="mdi-plus" @click="dialogStaff = true">
+      <v-btn color="teal" prepend-icon="mdi-plus" @click="dialogStaff = true">
         เพิ่มบุคลากร
       </v-btn>
     </v-row>
