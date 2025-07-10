@@ -1,11 +1,12 @@
 <template>
-  <v-container>
+  <v-container class="mt-8">
     <!-- ส่วนจัดการบุคลากร -->
     <v-row justify="space-between" align="center" class="mb-4">
       <h2 class="text-h6 font-weight-bold">จัดการบุคลากร</h2>
-      <v-btn color="teal" prepend-icon="mdi-plus" @click="dialogStaff = true">
+      <v-btn color="#009199" prepend-icon="mdi-plus" @click="dialogStaff = true">
         เพิ่มบุคลากร
       </v-btn>
+
     </v-row>
 
     <v-table density="comfortable">
@@ -23,13 +24,7 @@
           <td>{{ staff.email }}</td>
           <td>{{ staff.phone }}</td>
           <td>
-            <v-switch
-              v-model="staff.active"
-              inset
-              color="green"
-              :label="staff.active ? 'เปิด' : 'ปิด'"
-              hide-details
-            />
+            <v-switch v-model="staff.active" inset color="green" :label="staff.active ? 'เปิด' : 'ปิด'" hide-details />
           </td>
         </tr>
       </tbody>
@@ -38,16 +33,16 @@
     <!-- Dialog เพิ่มบุคลากร -->
     <v-dialog v-model="dialogStaff" max-width="500">
       <v-card>
-        <v-card-title class="text-h6">เพิ่มบุคลากร</v-card-title>
         <v-card-text>
           <v-text-field v-model="formStaff.name" label="ชื่อ" />
           <v-text-field v-model="formStaff.surname" label="นามสกุล" />
           <v-text-field v-model="formStaff.email" label="อีเมล" />
-          <v-textarea v-model="formStaff.phone" label="เบอร์โทร" />
+          <v-text-field v-model="formStaff.phone" label="เบอร์โทรติดต่อ" />
         </v-card-text>
-        <v-card-actions class="justify-end">
-          <v-btn text @click="dialogStaff = false">ยกเลิก</v-btn>
-          <v-btn color="green" @click="addStaff">เพิ่ม</v-btn>
+        <v-card-actions>
+          <v-btn color="green" block class="text-white" @click="addStaff">
+            เพิ่ม
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -55,13 +50,14 @@
     <!-- ส่วนจัดการสถานที่ -->
     <v-row justify="space-between" align="center" class="my-8">
       <h2 class="text-h6 font-weight-bold">จัดการสถานที่ให้บริการ</h2>
-      <v-btn color="teal" prepend-icon="mdi-map-marker" @click="dialogPlace = true">
+      <v-btn color="#009199" prepend-icon="mdi-plus" @click="dialogPlace = true">
         เพิ่มสถานที่
       </v-btn>
+
     </v-row>
 
     <v-table density="comfortable">
-      <thead class="bg-teal-darken-2 text-white">
+      <thead class="bg-cyan-darken-2 text-white">
         <tr>
           <th>ชื่อสถานที่</th>
           <th>สำหรับนักศึกษา</th>
@@ -73,13 +69,7 @@
           <td>{{ place.name }}</td>
           <td>{{ place.target }}</td>
           <td>
-            <v-switch
-              v-model="place.active"
-              inset
-              color="green"
-              :label="place.active ? 'เปิด' : 'ปิด'"
-              hide-details
-            />
+            <v-switch v-model="place.active" inset color="green" :label="place.active ? 'เปิด' : 'ปิด'" hide-details />
           </td>
         </tr>
       </tbody>
@@ -91,15 +81,11 @@
         <v-card-title class="text-h6">เพิ่มสถานที่</v-card-title>
         <v-card-text>
           <v-text-field v-model="formPlace.name" label="ชื่อสถานที่" />
-          <v-select
-            v-model="formPlace.target"
-            label="สำหรับนักศึกษา"
-            :items="['นักศึกษาไทย', 'นักศึกษาต่างชาติ']"
-          />
+          <v-select v-model="formPlace.target" label="สำหรับนักศึกษา" :items="['นักศึกษาไทย', 'นักศึกษาต่างชาติ']" />
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn text @click="dialogPlace = false">ยกเลิก</v-btn>
-          <v-btn color="green" @click="addPlace">เพิ่ม</v-btn>
+          <v-btn color="#009199" @click="addPlace">เพิ่ม</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
