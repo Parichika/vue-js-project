@@ -61,10 +61,20 @@ const text = computed(() => messages[lang.value]);
 const setLang = (l) => {
   lang.value = l;
 };
+import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
-const signInWithGoogle = () => {
-  alert("ยังไม่เชื่อมต่อระบบ Google Login จริง");
+const signInWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    console.log("User signed in: ", user);
+  } catch (error) {
+    console.error("Error signing in with Google: ", error);
+  }
 };
+
 </script>
 
 <style scoped>

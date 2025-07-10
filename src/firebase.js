@@ -1,20 +1,22 @@
-// src/firebase.js
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
-
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyBoTjSpmUCMiaw0rM01565kTmXSbt4VyhU",
-    authDomain: "counselling-queue-booking.firebaseapp.com",
-    projectId: "counselling-queue-booking",
-    storageBucket: "counselling-queue-booking.firebasestorage.app",
-    messagingSenderId: "546226276029",
-    appId: "1:546226276029:web:29d52c69b0f4698ac7d9d4",
-    measurementId: "G-Y1RRH9921S"
-  };
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
-const provider = new GoogleAuthProvider()
+  apiKey: "AIzaSyCs8MlL_mNKB-KWKAZYLkK6e7SIx4Ug2DE",
+  authDomain: "counselling-service-eae28.firebaseapp.com",
+  projectId: "counselling-service-eae28",
+  storageBucket: "counselling-service-eae28.firebasestorage.app",
+  messagingSenderId: "274657146461",
+  appId: "1:274657146461:web:feb4c39937eac4a47f7fb4",
+  measurementId: "G-V2HFNZ9JPG"
 
-export { auth, provider, signInWithPopup }
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
