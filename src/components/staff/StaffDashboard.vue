@@ -15,22 +15,22 @@
     <!-- ✅ Summary Numbers -->
     <v-row class="justify-center">
       <v-col cols="6" md="4">
-        <v-card class="pa-4 text-center">
+        <v-card class="pa-4 text-center" style="background-color: #009199;">
           <div class="caption d-flex align-center justify-center mb-1">
-            <v-icon size="20" color="#009199" class="mr-1">mdi-clipboard-list</v-icon>
-            จำนวนคำขอเข้ารับบริการทั้งหมด
+            <v-icon size="20" color="#FFFFFF" class="mr-1">mdi-clipboard-list</v-icon>
+            <span style="color: white !important;">จำนวนคำขอเข้ารับบริการทั้งหมด</span>
           </div>
-          <div class="text-h4 font-weight-bold" style="color: #009199;">200</div>
+          <div class="text-h4 font-weight-bold" style="color: white;">200</div>
         </v-card>
       </v-col>
 
       <v-col cols="6" md="4">
-        <v-card class="pa-4 text-center">
-          <div class="caption d-flex align-center justify-center mb-1">
-            <v-icon size="20" color="#009199" class="mr-1">mdi-calendar-week</v-icon>
-            {{ serviceRequestLabel }}
+        <v-card class="pa-4 text-center" style="background-color: #009199;">
+          <div class="caption d-flex align-center justify-center mb-1" style="color: white !important;">
+            <v-icon size="20" color="white" class="mr-1">mdi-calendar-week</v-icon>
+            <span style="color: white !important;">{{ serviceRequestLabel }}</span>
           </div>
-          <div class="text-h4 font-weight-bold" style="color: #009199;">40</div>
+          <div class="text-h4 font-weight-bold" style="color: white;">40</div>
         </v-card>
       </v-col>
     </v-row>
@@ -98,6 +98,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { Line, Pie, Bar } from 'vue-chartjs'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
 import {
   Chart as ChartJS,
   Title,
@@ -120,7 +121,8 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  ArcElement
+  ArcElement,
+  ChartDataLabels
 )
 
 const periodOptions = [
@@ -171,7 +173,9 @@ const lineChartData = {
 
 const lineChartOptions = {
   responsive: true,
-  plugins: { legend: { position: 'bottom' } },
+  plugins: { legend: { position: 'bottom' } ,
+  datalabels: { display: false }
+},
 }
 
 // Pie Charts
@@ -199,6 +203,17 @@ const pieChartOptions = {
   responsive: true,
   plugins: {
     legend: { position: 'bottom' },
+    datalabels: {
+      color: '#000',
+      font: {
+        weight: 'bold',
+        size: 14,
+      },
+      formatter: (value, ctx) => {
+        const label = ctx.chart.data.labels[ctx.dataIndex]
+        return `${label}: ${value}`
+      },
+    },
     tooltip: {
       callbacks: {
         label: (context) => `${context.label}: ${context.raw}`,
@@ -232,9 +247,12 @@ const barChartTimeData = {
 
 const barChartOptions = {
   responsive: true,
-  plugins: { legend: { display: false } },
+  plugins: { legend: { display: false } ,
+  datalabels: { display: false },
   scales: { y: { beginAtZero: true } },
 }
+}
+
 </script>
 
 <style scoped>
