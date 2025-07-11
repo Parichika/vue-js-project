@@ -145,6 +145,6 @@ const logout = () => {
       ? "ออกจากระบบแล้ว"
       : "You have been logged out"
   );
-  router.push({ name: "Login" }); // ชื่อ route สำหรับหน้า login
+  router.push({ name: "RoleSelect" }) // ชื่อ route สำหรับหน้า login
 };
 </script>
