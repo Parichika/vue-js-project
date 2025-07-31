@@ -185,11 +185,12 @@ const t = (key) => computed(() => translations[lang.value][key]).value;
 
 // ออกจากระบบ
 const logout = () => {
+  localStorage.clear();
   alert(
     lang.value === "th"
       ? "ออกจากระบบแล้ว"
       : "You have been logged out"
   );
-  router.push({ name: "Login" }); // ชื่อ route สำหรับหน้า login
+  router.push({ name: "RoleSelect" });
 };
 </script>

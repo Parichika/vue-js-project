@@ -26,10 +26,10 @@
               <td class="text-start">{{ item.phone }}</td>
               <td>
                 <div class="d-flex align-center justify-center ga-2">
-                  <v-btn v-if="item.status === 'pending'"size="small" variant="flat" :style="{
+                  <v-btn v-if="item.status === 'pending'" size="small" variant="flat" :style="{
                     backgroundColor: '#EACE7B',
                     color: '#7A601D',
-                    
+
                   }" @click="openDetailDialog(index)">
                     <v-icon start small>mdi-timer-sand</v-icon>
                     {{ t('status_pending') }}
@@ -63,7 +63,10 @@
               <div><strong>{{ t('col_type') }}:</strong> {{ selectedBooking.type }}</div>
             </v-card-text>
             <v-card-actions class="justify-end">
-              <v-btn style="background-color: #0DC71D; color: white;" @click="approveRequest">อนุมัติ</v-btn>
+              <v-btn style="background-color: #0DC71D; color: white;"
+                @click="acceptCase(selectedBooking.appointment_ID)">
+                อนุมัติ
+              </v-btn>
               <v-btn style="background-color: red; color: white;" @click="rejectRequest">ปฏิเสธ</v-btn>
             </v-card-actions>
           </v-card>
@@ -75,6 +78,7 @@
 
 <script setup>
 import { ref, computed, defineProps } from 'vue'
+import axios from "axios";
 
 const props = defineProps({
   lang: String
@@ -218,4 +222,28 @@ const selectedBooking = computed(() => {
   }
   return null
 })
+
+// สมมติว่าเก็บ staff_ID หลัง login ไว้ใน localStorage หรือ state อื่น
+const loggedInStaffID = 1; // ตรงนี้ต้องดึงจากระบบ login จริง เช่น localStorage.getItem('staff_ID')
+
+// ฟังก์ชันโหลดรายการใหม่ (ตอนนี้คุณมี translatedBookings ที่ดึงจาก bookings mock ไว้)
+// ในการใช้งานจริงคุณอาจจะเปลี่ยนไป fetch จาก backend
+const fetchAppointments = async () => {
+  const res = await axios.get("http://localhost:3000/api/appointments");
+  // เอา res.data ไปแทน bookings.value แล้ว map/แปลค่าเหมือนเดิม
+};
+
+// ฟังก์ชันรับเคส
+const acceptCase = async (appointmentID) => {
+  try {
+    await axios.put(`http://localhost:3000/api/appointments/${appointmentID}/assign`, {
+      staff_ID: loggedInStaffID,
+    });
+    alert("รับเคสสำเร็จ");
+    fetchAppointments(); // โหลดรายการใหม่
+    detailDialog.value = false;
+  } catch (err) {
+    alert(err.response?.data?.error || "เกิดข้อผิดพลาด");
+  }
+};
 </script>

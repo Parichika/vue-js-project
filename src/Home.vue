@@ -3,7 +3,7 @@
         <v-main class="main-bg">
             <!-- Language Bar -->
             <div class="lang-bar">
-                <span class="white--text mr-4">{{ text.home }}</span>
+                <span class="white--text mr-4 cursor-pointer" @click="goHome">{{ text.home }}</span>
                 <v-btn class="lang-btn mr-2" depressed @click="setLang('th')"
                     :class="{ 'selected-lang': lang === 'th' }">TH</v-btn>
                 <v-btn class="lang-btn" depressed @click="setLang('en')"
@@ -40,10 +40,12 @@ import { reactive, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '@/firebase'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import axios from 'axios'
 
 const router = useRouter()
 const lang = ref('th')
 
+// Language messages
 const messages = reactive({
     th: {
         home: 'หน้าแรก',
@@ -62,26 +64,47 @@ const messages = reactive({
 })
 
 const text = computed(() => messages[lang.value])
+const setLang = (l) => (lang.value = l)
 
-const setLang = (l) => {
-    lang.value = l
+const goHome = () => {
+    router.push({ name: 'RoleSelect' })
 }
 
 const signInWithGoogle = async () => {
     try {
-        const provider = new GoogleAuthProvider()
-        const result = await signInWithPopup(auth, provider)
-        const user = result.user
-        console.log('User signed in:', user)
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
 
-        // ตรวจ email แล้วไปตาม role
-        if (user.email.includes("@lamduan.mfu.ac.th")) {
-            router.push({ name: "Appointment" }) // นักศึกษา
-        } else {
-            router.push({ name: "AdminRequest" }) // เจ้าหน้าที่
+        console.log("✅ Signed in user:", user.email, user.displayName);
+
+        // 🔁 ส่ง email ไป backend เพื่อตรวจ role
+        const res = await axios.post('http://localhost:3000/api/login', {
+            email: user.email
+        });
+
+        console.log('🎯 Backend response:', res.data);
+
+        // ✅ เก็บชื่อจริงจาก Firebase (displayName)
+        localStorage.setItem('name', user.displayName);
+        localStorage.setItem("email", user.email)
+
+        // 👉 เก็บ role และ route ตามปกติ
+        if (res.data.role === 'admin') {
+            localStorage.setItem('staff_ID', res.data.staff_ID);
+            localStorage.setItem('role', 'admin');
+            router.push('/admin/AdminRequest');
+        } else if (res.data.role === 'staff') {
+            localStorage.setItem('staff_ID', res.data.staff_ID);
+            localStorage.setItem('role', 'staff');
+            router.push('/staff/StaffRequest');
+        } else if (res.data.role === 'student') {
+            localStorage.setItem('role', 'student');
+            router.push('/user/appointment');
         }
     } catch (error) {
-        console.error('Error signing in with Google:', error)
+        console.error('❌ Sign in or login error:', error);
+        alert('เข้าสู่ระบบล้มเหลว');
     }
 }
 </script>
@@ -141,7 +164,7 @@ const signInWithGoogle = async () => {
     background-color: white;
     color: #555;
     font-weight: 500;
-    font-size: 18px;
+    font-size: 16px;
     height: 56px;
     border-radius: 40px;
     padding: 0 24px;
@@ -156,11 +179,10 @@ const signInWithGoogle = async () => {
     width: 24px;
     height: 24px;
     display: block;
-    margin-right: 10px;
 }
 
 .login-note {
-    font-size: 18px;
+    font-size: 14px;
     color: white;
 }
 </style>

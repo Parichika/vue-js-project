@@ -35,9 +35,44 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
+import { ref } from 'vue'
+import axios from 'axios'
+import { useRouter, useRoute } from 'vue-router'
 
+const router = useRouter()
+const route = useRoute()
+
+const email = ref('')
+const errorMessage = ref('')
+
+// อ่าน role จาก query เช่น ?role=admin หรือ ?role=student
+const role = route.query.role
+
+// ฟังก์ชัน login
+const login = async () => {
+  try {
+    const res = await axios.post('http://localhost:3000/api/login', { email: email.value })
+    console.log('✅ Login Response:', res.data)
+
+    // ✅ ถ้าเป็นเจ้าหน้าที่ (staff/admin)
+    if (res.data.role === 'admin' || res.data.role === 'staff') {
+      localStorage.setItem('staff_ID', res.data.staff_ID)
+      localStorage.setItem('role', res.data.role)
+      alert('เข้าสู่ระบบเจ้าหน้าที่สำเร็จ')
+      router.push('/staff/StaffRequest') // ไปหน้าเจ้าหน้าที่
+    }
+    // ✅ ถ้าเป็นนักศึกษา
+    else if (res.data.role === 'student') {
+      alert('เข้าสู่ระบบนักศึกษาสำเร็จ')
+      router.push('/user/appointment') // ไปหน้านักศึกษา
+    }
+  } catch (err) {
+    console.error('❌ Login error:', err)
+    errorMessage.value = err.response?.data?.error || 'เกิดข้อผิดพลาด'
+  }
+}
+
+// ฟังก์ชันเปลี่ยนไปหน้ากรอกอีเมลตาม role
 const goToLogin = (role) => {
   router.push({ name: 'SignIn', query: { role } })
 }
