@@ -18,13 +18,15 @@
           <th>สถานะบัญชี</th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-for="(staff, index) in staffList" :key="index">
+      <!-- face do--------------------- -->
+      <tbody v-if="nonAdminStaff.length > 0">
+        <tr v-for="(staff, index) in nonAdminStaff" :key="staff.email">
           <td>{{ staff.name }}</td>
           <td>{{ staff.email }}</td>
           <td>{{ staff.phone }}</td>
           <td>
-            <v-switch v-model="staff.active" inset color="green" :label="staff.active ? 'เปิด' : 'ปิด'" hide-details />
+            <v-switch v-model="staff.active" inset color="green" :label="staff.active ? 'เปิด' : 'ปิด'"
+              @change="updateStaffStatus(staff)" hide-details />
           </td>
         </tr>
       </tbody>
@@ -69,7 +71,8 @@
           <td>{{ place.name }}</td>
           <td>{{ place.target }}</td>
           <td>
-            <v-switch v-model="place.active" inset color="green" :label="place.active ? 'เปิด' : 'ปิด'" hide-details />
+            <v-switch v-model="place.active" inset color="green" :label="place.active ? 'เปิด' : 'ปิด'"
+              @change="updatePlaceStatus(place)" hide-details />
           </td>
         </tr>
       </tbody>
@@ -93,58 +96,135 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue"; // face do------------------เพิ่ม computed
+import { onMounted } from "vue";
+import axios from "axios";
 
 // บุคลากร
 const dialogStaff = ref(false);
 const formStaff = ref({ name: "", surname: "", email: "", phone: "" });
 
-const staffList = ref([
-  {
-    name: "แววดาว บังเขม",
-    email: "6531501059@mfu.com",
-    phone: "0531501059",
-    active: true,
-  },
-  {
-    name: "สุภาภรณ์ กัลยา",
-    email: "6531501060@mfu.com",
-    phone: "0531501060",
-    active: false,
-  },
-]);
+// face do------------------
+// ใช้ computed filter แยก admin
+const nonAdminStaff = computed(() =>
+  staffList.value.filter((s) => s && s.role !== "admin")
+);
 
-const addStaff = () => {
-  if (formStaff.value.name && formStaff.value.surname && formStaff.value.email) {
-    staffList.value.push({
-      name: `${formStaff.value.name} ${formStaff.value.surname}`,
-      email: formStaff.value.email,
-      phone: formStaff.value.phone,
-      active: true,
-    });
-    formStaff.value = { name: "", surname: "", email: "", phone: "" };
-    dialogStaff.value = false;
+const staffList = ref([]);
+
+const fetchStaffList = async () => {
+  try {
+    const res = await axios.get("http://localhost:3000/api/staff");
+    console.log("📥 staff from API:", res.data);
+
+    staffList.value = res.data.map((s) => ({
+      name: s.name || `${s.first_name || ""} ${s.last_name || ""}`,
+      email: s.email,
+      phone: s.phone || s.phone_number || "-",
+      active: s.active === true || s.staff_status === "active",
+      role: s.role,
+    }));
+
+  } catch (err) {
+    console.error("❌ Failed to fetch staff list:", err);
   }
 };
 
-// สถานที่
+const addStaff = async () => {
+  if (formStaff.value.name && formStaff.value.surname && formStaff.value.email) {
+    try {
+      await axios.post("http://localhost:3000/api/staff", {
+        first_name: formStaff.value.name,
+        last_name: formStaff.value.surname,
+        email: formStaff.value.email,
+        phone_number: formStaff.value.phone,
+        role: "staff", // <<< ต้องมี role เสมอ
+      });
+
+      // ✅ โหลด staff list ใหม่จาก backend
+      await fetchStaffList();
+
+      // ✅ ล้างฟอร์มและปิด dialog
+      formStaff.value = { name: "", surname: "", email: "", phone: "" };
+      dialogStaff.value = false;
+    } catch (err) {
+      console.error("❌ Failed to add staff:", err);
+      alert("เกิดข้อผิดพลาดในการเพิ่มบุคลากร");
+    }
+  }
+};
+
+const updateStaffStatus = async (staff) => {
+  try {
+    const status = staff.active ? "active" : "inactive";
+    await axios.put(`http://localhost:3000/api/staff/status`, {
+      email: staff.email, // ✅ ต้องแน่ใจว่ามี email
+      status: status,
+    });
+  } catch (err) {
+    console.error("❌ Failed to update staff status:", err);
+    alert("เกิดข้อผิดพลาดในการเปลี่ยนสถานะบัญชี");
+  }
+};
+
+
+// สถานที่ ----------
 const dialogPlace = ref(false);
 const formPlace = ref({ name: "", target: "" });
 
-const placeList = ref([
-  { name: "อาคาร C1 ห้อง 112", target: "นักศึกษาไทย", active: true },
-  { name: "M4U (ตึก M-square)", target: "นักศึกษาต่างชาติ", active: true },
-]);
+const placeList = ref([]);
 
-const addPlace = () => {
+onMounted(() => {
+  fetchPlaceList();
+  fetchStaffList();
+});
+
+const fetchPlaceList = async () => {
+  const res = await axios.get("http://localhost:3000/api/places");
+  placeList.value = res.data.map((p) => ({
+    id: p.place_ID,
+    name: p.place_name,
+    target: p.target_group === "ไทย" ? "ไทย"
+      : p.target_group === "ต่างชาติ" ? "ต่างชาติ"
+        : "-", // กรณี null หรือไม่มีค่า
+    active: p.place_status === "open"
+  }));
+};
+
+const updatePlaceStatus = async (place) => {
+  const status = place.active ? "open" : "closed";
+  await axios.put(`http://localhost:3000/api/places/${place.id}/status`, {
+    status: status,
+  });
+};
+
+const addPlace = async () => {
   if (formPlace.value.name && formPlace.value.target) {
-    placeList.value.push({
-      name: formPlace.value.name,
-      target: formPlace.value.target,
-      active: true,
-    });
-    formPlace.value = { name: "", target: "" };
-    dialogPlace.value = false;
+    try {
+      const res = await axios.post("http://localhost:3000/api/places", {
+        name: formPlace.value.name,
+        target:
+          formPlace.value.target === "นักศึกษาไทย"
+            ? "ไทย"
+            : formPlace.value.target === "นักศึกษาต่างชาติ"
+              ? "ต่างชาติ"
+              : "",
+      });
+
+      // เพิ่มเข้า list แบบ sync กับค่าจาก backend
+      placeList.value.push({
+        id: res.data.place_ID,
+        name: res.data.name,
+        target: res.data.target,
+        active: true,
+      });
+
+      formPlace.value = { name: "", target: "" };
+      dialogPlace.value = false;
+    } catch (err) {
+      console.error("❌ Failed to add place:", err);
+      alert("เกิดข้อผิดพลาดในการเพิ่มสถานที่");
+    }
   }
 };
 </script>

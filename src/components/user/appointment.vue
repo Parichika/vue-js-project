@@ -109,13 +109,15 @@ const form = ref({
 });
 
 const occupiedTimes = ref([]);
+const allPlaces = ref([]);
 
 const rawTimeOptions = [
-  { label: "09.00 - 10.30 น.", value: "09:00:00" },
-  { label: "10.30 - 12.00 น.", value: "10:30:00" },
-  { label: "13.00 - 14.30 น.", value: "13:00:00" },
-  { label: "14.30 - 16.00 น.", value: "14:30:00" },
+  { label: "09.00 - 10.30 น.", value: "09:00-10:30" },
+  { label: "10.30 - 12.00 น.", value: "10:30-12:00" },
+  { label: "13.00 - 14.30 น.", value: "13:00-14:30" },
+  { label: "14.30 - 16.00 น.", value: "14:30-16:00" },
 ];
+
 
 const timeOptions = computed(() =>
   rawTimeOptions.map((opt) => ({
@@ -125,10 +127,14 @@ const timeOptions = computed(() =>
 );
 
 const channelOptions = computed(() => {
-  if (form.value.nationality === "ต่างชาติ") {
-    return [translations[lang.value].msquare];
-  }
-  return [translations[lang.value].on_site, translations[lang.value].online];
+  if (!form.value.nationality) return [];
+
+  return allPlaces.value
+    .filter(p =>
+      p.place_status === "open" &&
+      p.target_group === (form.value.nationality === "ไทย" ? "ไทย" : "ต่างชาติ")
+    )
+    .map(p => p.place_name);
 });
 
 // ✅ โหลดเวลาที่ถูกจอง
@@ -154,7 +160,10 @@ const fetchOccupiedTimes = async () => {
 
 // ✅ อัปเดตทุกครั้งที่เลือกวันที่หรือสถานที่
 watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes);
-onMounted(fetchOccupiedTimes);
+onMounted(() => {
+  fetchOccupiedTimes();
+  fetchPlaces();
+});
 
 // ✅ ส่งข้อมูลจองไป backend
 const submitForm = async () => {
@@ -172,6 +181,7 @@ const submitForm = async () => {
     channel: form.value.channel,
     nationality: form.value.nationality,
     email: localStorage.getItem("email"),
+    name: localStorage.getItem("name"),
   };
 
   try {
@@ -184,6 +194,17 @@ const submitForm = async () => {
     alert(msg);
   }
 };
+
+const fetchPlaces = async () => {
+  try {
+    const res = await axios.get("http://localhost:3000/api/places");
+    allPlaces.value = res.data;
+  } catch (err) {
+    console.error("โหลดสถานที่ล้มเหลว:", err);
+    allPlaces.value = [];
+  }
+};
+
 
 const resetForm = () => {
   form.value = {

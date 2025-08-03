@@ -21,11 +21,17 @@
 
                     <!-- Sign-in Button -->
                     <div class="d-flex justify-center">
-                        <v-btn class="google-signin-btn" @click="signInWithGoogle">
-                            <img src="/google.png" alt="Google Logo" class="google-icon" />
+                        <v-btn class="google-signin-btn" @click="signInWithGoogle" style="width: 300px; height: 50px;">
+                            <img src="/google.png" alt="Google Logo" class="google-icon" style="margin-right: 8px;" />
                             <span>{{ text.signin }}</span>
                         </v-btn>
                     </div>
+
+                    <!-- Alert error Message -->
+                    <v-alert v-if="errorMessage" type="error" class="error-alert mt-3 mx-auto" border="start"
+                        icon="mdi-close-circle" density="compact" style="padding-right: 12px ; font-weight: bold;">
+                        {{ errorMessage }}
+                    </v-alert>
 
                     <!-- Note -->
                     <p class="login-note mt-4">{{ text.note }}</p>
@@ -36,16 +42,17 @@
 </template>
 
 <script setup>
-import { reactive, computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, computed, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { auth } from '@/firebase'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import axios from 'axios'
 
 const router = useRouter()
+const route = useRoute()
 const lang = ref('th')
+const errorMessage = ref('') // ใช้กับ v-alert
 
-// Language messages
 const messages = reactive({
     th: {
         home: 'หน้าแรก',
@@ -53,6 +60,7 @@ const messages = reactive({
         title_en: 'Counselling Queue Booking',
         signin: 'เข้าสู่ระบบด้วยบัญชี Google',
         note: 'เข้าสู่ระบบด้วยบัญชีของมหาวิทยาลัยแม่ฟ้าหลวงเท่านั้น',
+        error_role: 'อีเมลไม่ตรงกับบทบาทที่เลือก',
     },
     en: {
         home: 'Home',
@@ -60,6 +68,7 @@ const messages = reactive({
         title_en: 'Counselling Queue Booking',
         signin: 'Sign in with Google',
         note: 'Sign in with your MFU account only.',
+        error_role: 'Email does not match with your selected role.',
     },
 })
 
@@ -71,42 +80,55 @@ const goHome = () => {
 }
 
 const signInWithGoogle = async () => {
+    errorMessage.value = '' // clear ทุกครั้งก่อน sign in
+
     try {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+        const provider = new GoogleAuthProvider()
+        const result = await signInWithPopup(auth, provider)
+        const user = result.user
 
-        console.log("✅ Signed in user:", user.email, user.displayName);
-
-        // 🔁 ส่ง email ไป backend เพื่อตรวจ role
         const res = await axios.post('http://localhost:3000/api/login', {
             email: user.email
-        });
+        })
 
-        console.log('🎯 Backend response:', res.data);
+        const roleFromBackend = res.data.role
+        const roleFromQuery = route.query.role || ''
 
-        // ✅ เก็บชื่อจริงจาก Firebase (displayName)
-        localStorage.setItem('name', user.displayName);
-        localStorage.setItem("email", user.email)
+        const isValid =
+            (roleFromQuery === 'admin' && ['admin', 'staff'].includes(roleFromBackend)) ||
+            (roleFromQuery === 'staff' && roleFromBackend === 'staff') ||
+            (roleFromQuery === 'student' && roleFromBackend === 'student')
 
-        // 👉 เก็บ role และ route ตามปกติ
-        if (res.data.role === 'admin') {
-            localStorage.setItem('staff_ID', res.data.staff_ID);
-            localStorage.setItem('role', 'admin');
-            router.push('/admin/AdminRequest');
-        } else if (res.data.role === 'staff') {
-            localStorage.setItem('staff_ID', res.data.staff_ID);
-            localStorage.setItem('role', 'staff');
-            router.push('/staff/StaffRequest');
-        } else if (res.data.role === 'student') {
-            localStorage.setItem('role', 'student');
-            router.push('/user/appointment');
+        if (!isValid) {
+            errorMessage.value = messages[lang.value].error_role
+            return
+        }
+
+        localStorage.setItem('name', user.displayName)
+        localStorage.setItem('email', user.email)
+
+        if (roleFromBackend === 'admin') {
+            localStorage.setItem('staff_ID', res.data.staff_ID)
+            localStorage.setItem('role', 'admin')
+            router.push('/admin/AdminRequest')
+        } else if (roleFromBackend === 'staff') {
+            localStorage.setItem('staff_ID', res.data.staff_ID)
+            localStorage.setItem('role', 'staff')
+            router.push('/staff/StaffRequest')
+        } else if (roleFromBackend === 'student') {
+            localStorage.setItem('role', 'student')
+            router.push('/user/appointment')
         }
     } catch (error) {
-        console.error('❌ Sign in or login error:', error);
-        alert('เข้าสู่ระบบล้มเหลว');
+        console.error('❌ Sign in or login error:', error)
+        errorMessage.value = 'เข้าสู่ระบบล้มเหลว'
     }
 }
+watch(lang, () => {
+    if (errorMessage.value === messages.th.error_role || errorMessage.value === messages.en.error_role) {
+        errorMessage.value = messages[lang.value].error_role
+    }
+})
 </script>
 
 <style scoped>
@@ -185,4 +207,18 @@ const signInWithGoogle = async () => {
     font-size: 14px;
     color: white;
 }
+
+.error-alert {
+  max-width: 400px;
+  width: 100%;
+  background-color: #ffcdd2 !important; /* สีแดงอ่อนทึบ */
+  color: #b71c1c !important;           /* สีตัวอักษร */
+  font-size: 14px;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 </style>

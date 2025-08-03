@@ -49,7 +49,12 @@
 
     <!-- เนื้อหาเมนูสลับ (form หรือ status) -->
     <v-main>
-      <component :is="activeMenuComponent" :lang="lang" :key="lang + '-' + activeMenu" />
+      <component
+        :is="activeMenuComponent"
+        :lang="lang"
+        :email="userEmail"
+        :key="lang + '-' + activeMenu"
+      />
     </v-main>
 
     <!-- Footer -->
@@ -68,12 +73,12 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import BookingForm from "./appointment.vue";
-import BookingStatus from "./status.vue"; // ต้องมีไฟล์นี้ด้วย
+import BookingStatus from "./status.vue";
 
-// เพิ่ม name ที่ดึงจาก localStorage
+// ชื่อผู้ใช้จาก localStorage
 const name = ref(localStorage.getItem("name") || "Guest");
+const userEmail = localStorage.getItem("email") || ""; // ✅ สำคัญมาก
 
-// router
 const router = useRouter();
 
 // ภาษาและเมนูที่ใช้งาน
@@ -84,7 +89,7 @@ const activeMenuComponent = computed(() => {
   return activeMenu.value === "booking" ? BookingForm : BookingStatus;
 });
 
-// การแปลข้อความใน layout
+// แปลข้อความ
 const translations = {
   th: {
     logout: "ออกจากระบบ",

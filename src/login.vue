@@ -4,7 +4,7 @@
       <v-container class="fill-height d-flex align-center justify-center">
         <v-card class="center-card text-center px-8 py-10" elevation="0">
           <!-- Logo -->
-          <v-img src="/logo_mfu.png" max-width="100" class="mx-auto mb-4" />
+          <v-img src="/logo_mfu.png" max-width="100" class="mx-auto mb-4 " />
 
           <!-- Title -->
           <h2 class="thai-title">ระบบจองคิวเข้ารับการให้คำปรึกษา</h2>
@@ -22,7 +22,7 @@
 
             <v-col cols="6" class="d-flex justify-start pl-5">
               <v-card class="role-box" elevation="2" @click="goToLogin('admin')">
-                <v-icon size="70" color="#00293f" class="mb-1">mdi-account-tie</v-icon>
+                <v-icon size="70" color="#00293f" class="mb-1 ">mdi-account-tie</v-icon>
                 <div class="role-label">Admin</div>
                 <div class="role-sub">เจ้าหน้าที่</div>
               </v-card>
@@ -58,11 +58,14 @@ const login = async () => {
     if (res.data.role === 'admin' || res.data.role === 'staff') {
       localStorage.setItem('staff_ID', res.data.staff_ID)
       localStorage.setItem('role', res.data.role)
+      localStorage.setItem("staff_ID", response.data.staff_ID)
       alert('เข้าสู่ระบบเจ้าหน้าที่สำเร็จ')
       router.push('/staff/StaffRequest') // ไปหน้าเจ้าหน้าที่
     }
     // ✅ ถ้าเป็นนักศึกษา
     else if (res.data.role === 'student') {
+      localStorage.setItem('email', email.value)
+      localStorage.setItem('name', res.data.name)
       alert('เข้าสู่ระบบนักศึกษาสำเร็จ')
       router.push('/user/appointment') // ไปหน้านักศึกษา
     }

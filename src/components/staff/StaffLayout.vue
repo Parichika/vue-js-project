@@ -11,16 +11,10 @@
             {{ t("logout") }}
             <v-icon size="25" class="mx-2">mdi-logout</v-icon>
           </v-btn>
-          <div class="text-subtitle-1 text-grey-darken-2 me-3 mb-2 text-end">
-            {{ lang === "th" ? "แววดาว บังเมฆ" : "Waewdao Bangmeak" }}
+          <div class="text-subtitle-1 text-grey-darken-2 me-3" style="transform: translateY(-4px)">
+            {{ name }}
           </div>
           <v-row align="center" class="px-6">
-            <!-- ช่องค้นหา -->
-            <v-col cols="auto">
-              <v-text-field v-model="search" :placeholder="t('search')" hide-details density="compact"
-                variant="outlined" class="me-8" append-inner-icon="mdi-magnify"
-                style="width: 200px; border-color: #33979d" input-class="py-1" />
-            </v-col>
             <v-col cols="auto">
               <v-btn icon size="small" class="me-2" color="teal" :variant="lang === 'th' ? 'flat' : 'outlined'"
                 @click="lang = 'th'">
@@ -77,11 +71,16 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import BookingRequest from "./StaffRequest.vue";
-import StaffHistory from "./StaffHistory.vue";
-import StaffDashboard from "./StaffDashboard.vue";
+import BookingRequest from "../admin/AdminRequest.vue";
+import StaffHistory from "../admin/AdminHistory.vue";
+import StaffDashboard from "../admin/AdminDashboard.vue";
 
 import { useRouter } from "vue-router";
+
+// ชื่อผู้ใช้จาก localStorage
+const name = ref(localStorage.getItem("name") || "Guest");
+const userEmail = localStorage.getItem("email") || ""; 
+
 // router
 const router = useRouter();
 
