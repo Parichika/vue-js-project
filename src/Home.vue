@@ -104,7 +104,8 @@ const signInWithGoogle = async () => {
             return
         }
 
-        localStorage.setItem('name', user.displayName)
+        // ✅ ใช้ชื่อจาก backend ที่ส่งมาจากฐานข้อมูล
+        localStorage.setItem('name', res.data.name)
         localStorage.setItem('email', user.email)
 
         if (roleFromBackend === 'admin') {
@@ -209,16 +210,17 @@ watch(lang, () => {
 }
 
 .error-alert {
-  max-width: 400px;
-  width: 100%;
-  background-color: #ffcdd2 !important; /* สีแดงอ่อนทึบ */
-  color: #b71c1c !important;           /* สีตัวอักษร */
-  font-size: 14px;
-  border-radius: 8px;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    max-width: 400px;
+    width: 100%;
+    background-color: #ffcdd2 !important;
+    /* สีแดงอ่อนทึบ */
+    color: #b71c1c !important;
+    /* สีตัวอักษร */
+    font-size: 14px;
+    border-radius: 8px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
-
 </style>
