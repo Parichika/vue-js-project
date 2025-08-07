@@ -109,7 +109,7 @@ const fetchBookings = async () => {
     const response = await axios.get("/api/appointments/status", {
       params: { email: props.email },
     });
-    console.log("📦 bookings response =", response.data);
+    console.log("bookings response =", response.data);
     console.log("Received booking data:", response.data);
 
     bookings.value = response.data.map((item) => {
@@ -139,7 +139,7 @@ const fetchBookings = async () => {
     });
 
   } catch (error) {
-    console.error("❌ Error fetching bookings:", error);
+    console.error("Error fetching bookings:", error);
   }
 };
 
@@ -185,12 +185,12 @@ const confirmCancel = async () => {
       if (response.data.message === "Appointment cancelled and reason saved") {
         bookings.value[selectedIndex.value].status = "cancelled";
         cancelDialog.value = false;
-        alert("ยกเลิกการจองเรียบร้อยแล้ว ✅");
+        alert("ยกเลิกการจองเรียบร้อยแล้ว");
       } else {
         alert("เกิดข้อผิดพลาดในการยกเลิกการจอง");
       }
     } catch (error) {
-      console.error("❌ cancel error:", error);
+      console.error("cancel error:", error);
       alert("เกิดข้อผิดพลาดในการยกเลิกการจอง");
     }
   }
@@ -241,7 +241,7 @@ const translations = {
 
 const t = (key) => computed(() => translations[props.lang][key]).value;
 
-// ✅ แสดงเฉพาะหน้าปัจจุบัน
+// แสดงเฉพาะหน้าปัจจุบัน
 const filteredBookings = computed(() => bookings.value)
 
 const paginatedBookings = computed(() => {

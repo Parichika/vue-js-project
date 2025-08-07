@@ -18,7 +18,6 @@
           <th>สถานะบัญชี</th>
         </tr>
       </thead>
-      <!-- face do--------------------- -->
       <tbody v-if="nonAdminStaff.length > 0">
         <tr v-for="(staff, index) in nonAdminStaff" :key="staff.email">
           <td>{{ staff.name }}</td>
@@ -96,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"; // face do------------------เพิ่ม computed
+import { ref, computed } from "vue"; 
 import { onMounted } from "vue";
 import axios from "axios";
 
@@ -104,7 +103,6 @@ import axios from "axios";
 const dialogStaff = ref(false);
 const formStaff = ref({ name: "", surname: "", email: "", phone: "" });
 
-// face do------------------
 // ใช้ computed filter แยก admin
 const nonAdminStaff = computed(() =>
   staffList.value.filter((s) => s && s.role !== "admin")
@@ -115,7 +113,7 @@ const staffList = ref([]);
 const fetchStaffList = async () => {
   try {
     const res = await axios.get("http://localhost:3000/api/staff");
-    console.log("📥 staff from API:", res.data);
+    console.log("staff from API:", res.data);
 
     staffList.value = res.data.map((s) => ({
       name: s.name || `${s.first_name || ""} ${s.last_name || ""}`,
@@ -126,7 +124,7 @@ const fetchStaffList = async () => {
     }));
 
   } catch (err) {
-    console.error("❌ Failed to fetch staff list:", err);
+    console.error("Failed to fetch staff list:", err);
   }
 };
 
@@ -141,14 +139,14 @@ const addStaff = async () => {
         role: "staff", // <<< ต้องมี role เสมอ
       });
 
-      // ✅ โหลด staff list ใหม่จาก backend
+      // โหลด staff list ใหม่จาก backend
       await fetchStaffList();
 
-      // ✅ ล้างฟอร์มและปิด dialog
+      // ล้างฟอร์มและปิด dialog
       formStaff.value = { name: "", surname: "", email: "", phone: "" };
       dialogStaff.value = false;
     } catch (err) {
-      console.error("❌ Failed to add staff:", err);
+      console.error("Failed to add staff:", err);
       alert("เกิดข้อผิดพลาดในการเพิ่มบุคลากร");
     }
   }
@@ -158,11 +156,11 @@ const updateStaffStatus = async (staff) => {
   try {
     const status = staff.active ? "active" : "inactive";
     await axios.put(`http://localhost:3000/api/staff/status`, {
-      email: staff.email, // ✅ ต้องแน่ใจว่ามี email
+      email: staff.email, //ต้องแน่ใจว่ามี email
       status: status,
     });
   } catch (err) {
-    console.error("❌ Failed to update staff status:", err);
+    console.error("Failed to update staff status:", err);
     alert("เกิดข้อผิดพลาดในการเปลี่ยนสถานะบัญชี");
   }
 };
@@ -222,7 +220,7 @@ const addPlace = async () => {
       formPlace.value = { name: "", target: "" };
       dialogPlace.value = false;
     } catch (err) {
-      console.error("❌ Failed to add place:", err);
+      console.error("Failed to add place:", err);
       alert("เกิดข้อผิดพลาดในการเพิ่มสถานที่");
     }
   }

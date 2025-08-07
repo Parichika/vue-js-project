@@ -97,7 +97,7 @@ const translations = {
 const t = (key) =>
   computed(() => translations[lang.value]?.[key] ?? `[${key}]`).value;
 
-// ✅ ฟอร์มข้อมูล
+// ฟอร์มข้อมูล
 const form = ref({
   date: "",
   time: "",
@@ -137,7 +137,7 @@ const channelOptions = computed(() => {
     .map(p => p.place_name);
 });
 
-// ✅ โหลดเวลาที่ถูกจอง
+// โหลดเวลาที่ถูกจอง
 const fetchOccupiedTimes = async () => {
   if (!form.value.date || !form.value.channel) {
     occupiedTimes.value = [];
@@ -158,14 +158,14 @@ const fetchOccupiedTimes = async () => {
   }
 };
 
-// ✅ อัปเดตทุกครั้งที่เลือกวันที่หรือสถานที่
+// อัปเดตทุกครั้งที่เลือกวันที่หรือสถานที่
 watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes);
 onMounted(() => {
   fetchOccupiedTimes();
   fetchPlaces();
 });
 
-// ✅ ส่งข้อมูลจองไป backend
+// ส่งข้อมูลจองไป backend
 const submitForm = async () => {
   if (!form.value.date || !form.value.time || !form.value.phone || !form.value.channel) {
     alert(lang.value === "th" ? "กรุณากรอกข้อมูลให้ครบถ้วน" : "Please fill out all required fields");
@@ -187,8 +187,8 @@ const submitForm = async () => {
   try {
     await axios.post("http://localhost:3000/api/appointments", payload);
     alert(lang.value === "th" ? "จองสำเร็จ!" : "Appointment booked!");
-    resetForm(); // ✅ ล้างข้อมูลฟอร์ม
-    fetchOccupiedTimes(); // ✅ โหลดเวลาที่ถูกจองใหม่
+    resetForm(); // ล้างข้อมูลฟอร์ม
+    fetchOccupiedTimes(); // โหลดเวลาที่ถูกจองใหม่
   } catch (err) {
     const msg = err.response?.data?.error || err.message || "เกิดข้อผิดพลาด";
     alert(msg);

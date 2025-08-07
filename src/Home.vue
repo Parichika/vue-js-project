@@ -104,7 +104,7 @@ const signInWithGoogle = async () => {
             return
         }
 
-        // ✅ ใช้ชื่อจาก backend ที่ส่งมาจากฐานข้อมูล
+        // ใช้ชื่อจาก backend ที่ส่งมาจากฐานข้อมูล
         localStorage.setItem('name', res.data.name)
         localStorage.setItem('email', user.email)
 
@@ -121,7 +121,7 @@ const signInWithGoogle = async () => {
             router.push('/user/appointment')
         }
     } catch (error) {
-        console.error('❌ Sign in or login error:', error)
+        console.error('Sign in or login error:', error)
         errorMessage.value = 'เข้าสู่ระบบล้มเหลว'
     }
 }

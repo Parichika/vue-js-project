@@ -77,7 +77,7 @@ import BookingStatus from "./status.vue";
 
 // ชื่อผู้ใช้จาก localStorage
 const name = ref(localStorage.getItem("name") || "Guest");
-const userEmail = localStorage.getItem("email") || ""; // ✅ สำคัญมาก
+const userEmail = localStorage.getItem("email") || "";
 
 const router = useRouter();
 

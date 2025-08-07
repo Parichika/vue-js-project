@@ -116,13 +116,13 @@ const appointments = ref([])
 const showDialog = ref(false)
 const selectedAppointment = ref(null)
 
-// ✅ เปิด Dialog
+// เปิด Dialog
 const openAssignDialog = (appointment) => {
   selectedAppointment.value = appointment
   showDialog.value = true
 }
 
-// ✅ รับเคส
+// รับเคส
 const confirmAssign = async () => {
   try {
     const staff_ID = localStorage.getItem('staff_ID')
@@ -134,19 +134,19 @@ const confirmAssign = async () => {
     alert('รับเคสสำเร็จ')
 
     showDialog.value = false
-    fetchAppointments() // 🔁 โหลดรายการใหม่
+    fetchAppointments() // โหลดรายการใหม่
   } catch (err) {
     alert('เกิดข้อผิดพลาดในการรับเคส')
   }
 }
 
 
-// ✅ ปฏิเสธเคส
+// ปฏิเสธเคส
 const rejectCase = async () => {
   try {
-    const staff_ID = localStorage.getItem('staff_ID') // ✅ ดึง staff_ID มา
+    const staff_ID = localStorage.getItem('staff_ID') // ดึง staff_ID มา
     await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/reject`, {
-      staff_ID, // ✅ ส่งไปด้วย
+      staff_ID, // ส่งไปด้วย
     })
     alert('ปฏิเสธเคสสำเร็จ')
     showDialog.value = false
@@ -158,20 +158,20 @@ const rejectCase = async () => {
 
 
 
-// ✅ แปลงวันที่
+// แปลงวันที่
 const formatDate = (dateString) => {
   if (!dateString) return "-"
   return new Date(dateString).toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
-// ✅ โหลดข้อมูล
+// โหลดข้อมูล
 const fetchAppointments = async () => {
   const res = await axios.get("http://localhost:3000/api/appointments")
-  console.log("📦 appointments =", res.data)
+  console.log("appointments =", res.data)
   appointments.value = res.data
 }
 
-// ✅ แสดงเฉพาะหน้าปัจจุบัน
+// แสดงเฉพาะหน้าปัจจุบัน
 const filteredBookings = computed(() => appointments.value)
 
 const paginatedBookings = computed(() => {

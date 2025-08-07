@@ -1,6 +1,6 @@
 <template>
   <v-container class="py-6">
-    <!-- ✅ Header -->
+    <!-- Header -->
     <v-row>
       <v-col cols="12" class="d-flex justify-space-between align-center">
         <div class="d-flex align-center gap-2">
@@ -12,7 +12,7 @@
       </v-col>
     </v-row>
 
-    <!-- ✅ Summary Cards -->
+    <!-- Summary Cards -->
     <v-row class="d-flex flex-wrap justify-center" style="gap: 24px;">
       <div v-for="(item, index) in summaryCards" :key="index" style="width: 220px;">
         <v-card class="pa-4 text-center" :style="{ backgroundColor: item.color }">
@@ -27,7 +27,7 @@
       </div>
     </v-row>
 
-    <!-- ✅ Bar Charts -->
+    <!-- Bar Charts -->
     <v-row>
       <v-col cols="12" md="6">
         <v-card class="pa-4">
@@ -49,7 +49,7 @@
       </v-col>
     </v-row>
 
-    <!-- ✅ Bar Charts by day/time -->
+    <!-- Bar Charts by day/time -->
     <v-row>
       <v-col cols="12" md="6">
         <v-card class="pa-4">
@@ -83,7 +83,7 @@ ChartJS.register(
   BarElement, ChartDataLabels
 )
 
-// ▶️ period filter
+// period filter
 const periodOptions = [
   'ทั้งหมด',
   'สัปดาห์นี้',
@@ -97,7 +97,7 @@ const serviceRequestLabel = computed(() =>
   `จำนวนคำขอเข้ารับบริการ${selectedPeriod.value}`
 )
 
-// ▶️ dashboard data
+// dashboard data
 const dashboardData = ref({
   summary: {},
   serviceTypes: [],
@@ -119,7 +119,7 @@ const loadDashboardData = async () => {
 onMounted(loadDashboardData)
 watch(selectedPeriod, loadDashboardData)
 
-// ▶️ summary card info
+// summary card info
 const summaryCards = computed(() => [
   {
     label: 'คำขอทั้งหมด',
@@ -159,7 +159,7 @@ const summaryCards = computed(() => [
   }
 ])
 
-// ▶️ สีตามประเภท
+// สีตามประเภท
 const labelColorMap = {
   'ขอรับการปรึกษาด้านการใช้ชีวิต และสุขภาพจิต': '#4CAF50',
   'ขอรับการปรึกษาด้านการเรียน': '#8BADD3',
@@ -175,7 +175,7 @@ const shortLabelMap = {
   'อื่น ๆ': 'อื่นๆ'
 }
 
-// ▶️ แผนภูมิแท่ง - ประเภทที่ "เสร็จสิ้น"
+// แผนภูมิแท่ง - ประเภทที่ "เสร็จสิ้น"
 const barChartCompletedTypeData = computed(() => {
   const items = dashboardData.value.serviceTypes || []
   return {
@@ -187,7 +187,7 @@ const barChartCompletedTypeData = computed(() => {
     }]
   }
 })
-// ▶️ แผนภูมิแท่ง - ประเภท "ทั้งหมด"
+// แผนภูมิแท่ง - ประเภท "ทั้งหมด"
 const barChartServiceTypeData = computed(() => {
   const items = dashboardData.value.serviceTypes || []
   return {
@@ -200,7 +200,7 @@ const barChartServiceTypeData = computed(() => {
   }
 })
 
-// ▶️ กราฟแยกตามวัน
+// กราฟแยกตามวัน
 const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const thaiDays = {
   Monday: 'จันทร์', Tuesday: 'อังคาร', Wednesday: 'พุธ',
@@ -218,7 +218,7 @@ const barChartDayData = computed(() => {
   }
 })
 
-// ▶️ กราฟแยกตามเวลา
+// กราฟแยกตามเวลา
 const fixedTimeSlots = [
   '09:00–10:30',
   '10:30–12:00',
@@ -245,7 +245,7 @@ const barChartTimeData = computed(() => {
 })
 
 
-// ▶️ chart options
+// chart options
 const barChartOptions = {
   responsive: true,
   plugins: {

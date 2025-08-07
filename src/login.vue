@@ -52,9 +52,9 @@ const role = route.query.role
 const login = async () => {
   try {
     const res = await axios.post('http://localhost:3000/api/login', { email: email.value })
-    console.log('✅ Login Response:', res.data)
+    console.log('Login Response:', res.data)
 
-    // ✅ ถ้าเป็นเจ้าหน้าที่ (staff/admin)
+    // ถ้าเป็นเจ้าหน้าที่ (staff/admin)
     if (res.data.role === 'admin' || res.data.role === 'staff') {
       localStorage.setItem('staff_ID', res.data.staff_ID)
       localStorage.setItem('role', res.data.role)
@@ -62,7 +62,7 @@ const login = async () => {
       alert('เข้าสู่ระบบเจ้าหน้าที่สำเร็จ')
       router.push('/staff/StaffRequest') // ไปหน้าเจ้าหน้าที่
     }
-    // ✅ ถ้าเป็นนักศึกษา
+    // ถ้าเป็นนักศึกษา
     else if (res.data.role === 'student') {
       localStorage.setItem('email', email.value)
       localStorage.setItem('name', res.data.name)
@@ -70,7 +70,7 @@ const login = async () => {
       router.push('/user/appointment') // ไปหน้านักศึกษา
     }
   } catch (err) {
-    console.error('❌ Login error:', err)
+    console.error('Login error:', err)
     errorMessage.value = err.response?.data?.error || 'เกิดข้อผิดพลาด'
   }
 }

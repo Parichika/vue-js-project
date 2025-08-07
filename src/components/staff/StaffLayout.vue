@@ -52,7 +52,7 @@
       </template>
     </v-app-bar>
 
-    <!-- ✅ ใช้ component ที่สลับตามเมนู -->
+    <!-- ใช้ component ที่สลับตามเมนู -->
     <v-main>
       <component :is="activeMenuComponent" :lang="lang" :key="lang + '-' + activeMenu" />
     </v-main>

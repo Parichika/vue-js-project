@@ -13,13 +13,13 @@ const routes = [
     path: "/staff/StaffRequest",
     name: "StaffRequest",
     component: StaffRequest,
-    meta: { requiresRole: ["staff"] }, // ✅ เฉพาะ staff เท่านั้น
+    meta: { requiresRole: ["staff"] }, //เฉพาะ staff เท่านั้น
   },
   {
     path: "/admin/AdminRequest",
     name: "AdminRequest",
     component: AdminRequest,
-    meta: { requiresRole: ["admin"] }, // ✅ เฉพาะ admin เท่านั้น
+    meta: { requiresRole: ["admin"] }, //เฉพาะ admin เท่านั้น
   },
 ];
 

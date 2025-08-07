@@ -3,14 +3,14 @@
     <v-main>
       <v-container>
 
-        <!-- 🔍 หัวเรื่อง + ช่องค้นหา -->
+        <!-- หัวเรื่อง + ช่องค้นหา -->
         <v-row class="mb-4" align="center" justify="space-between">
           <v-col cols="auto" class="text-center">
             <h2 class="text-h5 font-weight-bold mb-0 " style="color: #009199;">รายการประวัติคำขอเข้ารับคำปรึกษา</h2>
           </v-col>
 
 
-          <!-- ✅ ช่องค้นหาอยู่ขวา -->
+          <!-- ช่องค้นหาอยู่ขวา -->
           <v-col cols="12" sm="5" md="4" lg="3" class="d-flex justify-end">
             <v-text-field v-model="search" label="ค้นหา" prepend-inner-icon="mdi-magnify" variant="outlined"
               density="compact" hide-details style="min-height: 38px; max-width: 260px;" clearable />
@@ -72,7 +72,7 @@
 
       </v-container>
 
-      <!-- ✅ Dialog สำหรับใส่คำแนะนำ -->
+      <!-- Dialog สำหรับใส่คำแนะนำ -->
       <v-dialog v-model="dialog" width="500">
         <v-card>
           <v-card-title class="text-h6">ระบุคำแนะนำที่ให้</v-card-title>
@@ -143,14 +143,14 @@ function formatDate(dateStr) {
   return `${day}/${month}/${year}`
 }
 
-// ✅ เฉพาะ approved / rejected / completed
+// เฉพาะ approved / rejected / completed
 const translatedBookings = computed(() =>
   staffBookings.value.filter(item =>
     ['approved', 'rejected', 'completed'].includes(item.status)
   )
 )
 
-// ✅ แสดงเฉพาะหน้าปัจจุบัน
+// แสดงเฉพาะหน้าปัจจุบัน
 const paginatedBookings = computed(() => {
   const start = (page.value - 1) * 5
   return filteredBookings.value.slice(start, start + 5)
@@ -172,7 +172,7 @@ async function submitCompletion() {
     selectedItem.value.status = 'completed'
     dialog.value = false
   } catch (error) {
-    console.error('❌ Error submitting completion:', error)
+    console.error('Error submitting completion:', error)
   }
 }
 
@@ -198,7 +198,7 @@ const pageCount = computed(() =>
 onMounted(async () => {
   try {
     if (!staffId) {
-      console.warn("❌ staff_ID not found in localStorage")
+      console.warn("staff_ID not found in localStorage")
       return
     }
 
@@ -208,7 +208,7 @@ onMounted(async () => {
 
     staffBookings.value = res.data
   } catch (error) {
-    console.error('❌ Error loading staff appointments:', error)
+    console.error('Error loading staff appointments:', error)
   }
 })
 </script>

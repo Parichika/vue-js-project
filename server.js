@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-  console.log(`📡 ${req.method} ${req.url}`);
+  console.log(`${req.method} ${req.url}`);
   next();
 });
 
@@ -30,8 +30,8 @@ db.connect((err) => {
 
 // API: สร้างการจอง
 app.post("/api/appointments", (req, res) => {
-  console.log("📥 POST /api/appointments called");
-  console.log("🔎 Body =", req.body);
+  console.log("POST /api/appointments called");
+  console.log("Body =", req.body);
 
   const {
     date,
@@ -70,7 +70,7 @@ app.post("/api/appointments", (req, res) => {
             return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
           }
 
-          // ✅ ใช้ serviceMap แทนการ query
+          // ใช้ serviceMap แทนการ query
           const serviceMap = {
             life: 1, // ขอรับการปรึกษาด้านการใช้ชีวิตฯ
             study: 2, // ขอรับการปรึกษาด้านการเรียน
@@ -115,7 +115,7 @@ function saveAppointment(
   },
   res
 ) {
-  console.log("📧 Email inside saveAppointment =", email);
+  console.log("Email inside saveAppointment =", email);
   const sql = `
     INSERT INTO appointment (
       user_email, staff_ID, date, time,
@@ -138,7 +138,7 @@ function saveAppointment(
     name,
   ];
 
-  console.log("📝 Saving appointment:", values);
+  console.log("Saving appointment:", values);
 
   db.query(sql, values, (err, result) => {
     if (err) return res.status(500).json({ error: err });
@@ -181,8 +181,8 @@ app.put("/api/appointments/:id/assign", (req, res) => {
   const appointmentID = req.params.id;
   const { staff_ID } = req.body;
 
-  console.log("📥 รับเคส appointmentID =", appointmentID);
-  console.log("👤 โดย staff_ID =", staff_ID);
+  console.log("รับเคส appointmentID =", appointmentID);
+  console.log("โดย staff_ID =", staff_ID);
 
   if (!staff_ID) return res.status(400).json({ error: "Missing staff_ID" });
 
@@ -215,8 +215,8 @@ app.put("/api/appointments/:id/reject", (req, res) => {
   });
 });
 
-// ดึงรายการจองทั้งหมด (admin/staff ใช้)
-// ✅ ดึงรายการจองสำหรับ staff
+
+// ดึงรายการจองสำหรับ staff
 app.get("/api/appointments", (req, res) => {
   const sql = `
     SELECT 
@@ -246,8 +246,8 @@ app.get("/api/appointments", (req, res) => {
 
 // ดึงสถานะการจองของ user
 app.get("/api/appointments/status", (req, res) => {
-  console.log("✅ Status endpoint called");
-  console.log("📥 Query =", req.query);
+  console.log("Status endpoint called");
+  console.log("Query =", req.query);
   const { email } = req.query;
 
   if (!email) {
@@ -303,11 +303,11 @@ app.put("/api/appointments/:id/cancel", (req, res) => {
 
   db.query(updateSql, [appointmentId], (err, result) => {
     if (err) {
-      console.error("❌ Error during cancellation update:", err);
+      console.error("Error during cancellation update:", err);
       return res.status(500).json({ error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
     }
 
-    // แทรกเหตุผลการยกเลิกลงในตาราง cancel_appointment
+    // เหตุผลการยกเลิกลงในตาราง cancel_appointment
     const insertSql = `
       INSERT INTO cancel_appointment (appointment_ID, cancel_reason)
       VALUES (?, ?)
@@ -315,7 +315,7 @@ app.put("/api/appointments/:id/cancel", (req, res) => {
 
     db.query(insertSql, [appointmentId, reason], (err2, result2) => {
       if (err2) {
-        console.error("❌ Error during inserting cancel reason:", err2);
+        console.error("Error during inserting cancel reason:", err2);
         return res
           .status(500)
           .json({ error: "เกิดข้อผิดพลาดในการบันทึกเหตุผล" });
@@ -326,7 +326,7 @@ app.put("/api/appointments/:id/cancel", (req, res) => {
   });
 });
 
-// ✅ ดึงเฉพาะรายการที่ approved หรือ rejected สำหรับ staff คนที่ล็อกอิน
+// ดึงเฉพาะรายการที่ approved หรือ rejected สำหรับ staff คนที่ล็อกอิน
 app.get("/api/history", (req, res) => {
   const { staff_ID, role } = req.query;
 
@@ -338,7 +338,7 @@ app.get("/api/history", (req, res) => {
   let values;
 
   if (role === "admin") {
-    // 🔍 admin ดูได้ทุกคน
+    // admin ดูได้ทุกคน
     sql = `
       SELECT 
         a.appointment_ID,
@@ -360,7 +360,7 @@ app.get("/api/history", (req, res) => {
     `;
     values = [];
   } else if (staff_ID) {
-    // 🔍 staff ดูเฉพาะของตัวเอง
+    // staff ดูเฉพาะของตัวเอง
     sql = `
       SELECT 
         a.appointment_ID,
@@ -391,7 +391,7 @@ app.get("/api/history", (req, res) => {
   });
 });
 
-// ✅ อัปเดตสถานะและคำแนะนำหลังให้คำปรึกษา
+// อัปเดตสถานะและคำแนะนำหลังให้คำปรึกษา
 app.post("/api/appointments/complete", (req, res) => {
   const { appointment_ID, advice_detail } = req.body;
 
@@ -437,7 +437,7 @@ app.post("/api/appointments/complete", (req, res) => {
   });
 });
 
-// ✅ รวมข้อมูลสรุปทั้งหมดสำหรับ dashboard
+// รวมข้อมูลสรุปทั้งหมดสำหรับ dashboard
 app.get("/api/dashboard", (req, res) => {
   const { period } = req.query;
   const dayjs = require("dayjs");
@@ -572,7 +572,7 @@ const serviceTypeQuery = `
   });
 });
 
-// API Place------------face ทำ
+// API Place
 app.put("/api/places/:id/status", (req, res) => {
   const placeId = req.params.id;
   const { status } = req.body;
@@ -586,7 +586,7 @@ app.put("/api/places/:id/status", (req, res) => {
     [status, placeId],
     (err, result) => {
       if (err) {
-        console.error("❌ Error updating place_status:", err);
+        console.error("Error updating place_status:", err);
         return res.status(500).json({ error: "Database error" });
       }
       res.json({ message: "สถานะถูกอัปเดตแล้ว" });
@@ -615,7 +615,7 @@ app.post("/api/places", (req, res) => {
 
   db.query(sql, [name, "open", target], (err, result) => {
     if (err) {
-      console.error("❌ Failed to insert place:", err);
+      console.error("Failed to insert place:", err);
       return res.status(500).json({ error: "Database error" });
     }
 
@@ -662,7 +662,7 @@ app.get("/api/search", (req, res) => {
 
   db.query(searchQuery, [searchTerm, searchTerm], (err, results) => {
     if (err) {
-      console.error("❌ Error searching appointments:", err);
+      console.error("Error searching appointments:", err);
       return res.status(500).json({ error: "Database error" });
     }
 
@@ -670,12 +670,12 @@ app.get("/api/search", (req, res) => {
   });
 });
 
-// API Staff เปิดปิดเพิ่ม face do-----------------------------
-// ✅ POST เพิ่ม staff ใหม่
+// API Staff เปิดปิดเพิ่ม 
+// POST เพิ่ม staff ใหม่
 app.post("/api/staff", (req, res) => {
   const { first_name, last_name, email, phone_number, role } = req.body;
 
-  console.log("📥 เพิ่ม staff:", {
+  console.log("เพิ่ม staff:", {
     first_name,
     last_name,
     email,
@@ -684,7 +684,7 @@ app.post("/api/staff", (req, res) => {
   });
 
   if (!first_name || !last_name || !email || !role) {
-    console.error("❌ Missing fields:", { first_name, last_name, email, role });
+    console.error("Missing fields:", { first_name, last_name, email, role });
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -698,7 +698,7 @@ app.post("/api/staff", (req, res) => {
     [first_name, last_name, email, phone_number, role, "active"],
     (err, result) => {
       if (err) {
-        console.error("❌ Error adding staff:", err);
+        console.error("Error adding staff:", err);
         return res.status(500).json({ error: "Database error" });
       }
 
@@ -710,7 +710,7 @@ app.post("/api/staff", (req, res) => {
   );
 });
 
-// ✅ PUT อัปเดตสถานะ staff
+//อัปเดตสถานะ staff
 app.put("/api/staff/status", (req, res) => {
   const { email, status } = req.body;
 
@@ -723,7 +723,7 @@ app.put("/api/staff/status", (req, res) => {
     [status, email],
     (err, result) => {
       if (err) {
-        console.error("❌ Error updating staff status:", err);
+        console.error("Error updating staff status:", err);
         return res.status(500).json({ error: "Database error" });
       }
 
@@ -732,13 +732,13 @@ app.put("/api/staff/status", (req, res) => {
   );
 });
 
-// ✅ GET ดึง staff ทั้งหมด
+// GET ดึง staff ทั้งหมด
 app.get("/api/staff", (req, res) => {
   db.query(
     "SELECT first_name, last_name, email, phone_number, staff_status, role FROM staff",
     (err, results) => {
       if (err) {
-        console.error("❌ Error fetching staff:", err);
+        console.error("Error fetching staff:", err);
         return res.status(500).json({ error: "Database error" });
       }
 
@@ -760,12 +760,12 @@ app.get("/api/staff", (req, res) => {
 
 // API login
 app.post("/api/login", (req, res) => {
-  console.log("📥 เข้าถึง /api/login แล้ว");
+  console.log("เข้าถึง /api/login แล้ว");
   let { email } = req.body;
-  console.log("📩 Email received:", email);
+  console.log("Email received:", email);
 
   if (!email) {
-    console.log("❌ ไม่มี email ส่งมาใน body");
+    console.log("ไม่มี email ส่งมาใน body");
     return res.status(400).json({ error: "Missing email" });
   }
 
@@ -773,21 +773,20 @@ app.post("/api/login", (req, res) => {
 
   db.query("SELECT * FROM staff WHERE email = ?", [email], (err, results) => {
     if (err) {
-      console.error("❌ Database error:", err);
+      console.error("Database error:", err);
       return res.status(500).json({ error: "Database error" });
     }
 
     if (results.length > 0) {
       const staff = results[0];
 
-            // face do---------------
-      // 🔍 ตรวจสอบสถานะบัญชี
+      // ตรวจสอบสถานะบัญชี
       if (staff.staff_status !== "active") {
-        console.log("⛔ บัญชีถูกปิดการใช้งาน:", email);
+        console.log("บัญชีถูกปิดการใช้งาน:", email);
         return res.status(403).json({ error: "บัญชีถูกปิดการใช้งาน" });
       }
 
-      console.log("✅ พบใน staff:", staff);
+      console.log("พบใน staff:", staff);
       return res.json({
         message: "เข้าสู่ระบบเจ้าหน้าที่",
         staff_ID: staff.staff_ID,
@@ -797,7 +796,7 @@ app.post("/api/login", (req, res) => {
     }
 
     if (email.endsWith("@lamduan.mfu.ac.th")) {
-      console.log("✅ อีเมลนักศึกษา:", email);
+      console.log("อีเมลนักศึกษา:", email);
       return res.json({
         message: "เข้าสู่ระบบนักศึกษา",
         role: "student",
@@ -805,13 +804,13 @@ app.post("/api/login", (req, res) => {
       });
     }
 
-    console.log("❌ ไม่อนุญาตให้เข้าใช้งาน:", email);
+    console.log("ไม่อนุญาตให้เข้าใช้งาน:", email);
     return res.status(401).json({ error: "ไม่อนุญาตให้เข้าใช้งาน" });
   });
 });
 
 // เริ่มต้นเซิร์ฟเวอร์
 app.listen(3000, () => {
-  console.log("🚀 Server running on http://localhost:3000");
-  console.log("✅ API ready for appointments");
+  console.log("Server running on http://localhost:3000");
+  console.log("API ready for appointments");
 });
