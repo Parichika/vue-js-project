@@ -22,7 +22,7 @@
               <td class="text-start">{{ item.staff || "-" }}</td>
               <td>
                 <div class="d-flex align-center justify-center ga-2">
-                  <v-chip v-if="item.status === 'pending'" color="yellow-darken-2" text-color="black">
+                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black">
                     <v-icon start small>mdi-timer-sand</v-icon>
                     {{ t("status_pending") }}
                   </v-chip>

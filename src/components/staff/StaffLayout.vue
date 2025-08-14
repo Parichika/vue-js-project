@@ -122,6 +122,6 @@ const logout = () => {
       ? "ออกจากระบบแล้ว"
       : "You have been logged out"
   );
-  router.push({ name: "RoleSelect" });
+  router.push({ name: "SignIn" });
 };
 </script>

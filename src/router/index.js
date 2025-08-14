@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
-import RoleSelect from "@/login.vue";
+// import RoleSelect from "@/login.vue";
 import SignIn from "@/Home.vue";
 import Appointment from "@/components/user/UserLayout.vue";
 import StaffRequest from "@/components/staff/StaffLayout.vue";
 import AdminRequest from "@/components/admin/AdminLayout.vue";
 
 const routes = [
-  { path: "/", name: "RoleSelect", component: RoleSelect },
-  { path: "/login", name: "SignIn", component: SignIn },
+  // { path: "/", name: "RoleSelect", component: RoleSelect },
+  { path: "/", name: "SignIn", component: SignIn },
   { path: "/user/appointment", name: "Appointment", component: Appointment },
   {
     path: "/staff/StaffRequest",
@@ -36,11 +36,11 @@ router.beforeEach((to, from, next) => {
     // หน้าต้องการ role
     if (!role) {
       alert("กรุณาเข้าสู่ระบบก่อน");
-      return next({ name: "RoleSelect" });
+      return next({ name: "SignIn" });
     }
     if (!to.meta.requiresRole.includes(role)) {
       alert("คุณไม่มีสิทธิ์เข้าหน้านี้");
-      return next({ name: "RoleSelect" });
+      return next({ name: "SignIn" });
     }
   }
 

@@ -76,7 +76,7 @@ const text = computed(() => messages[lang.value])
 const setLang = (l) => (lang.value = l)
 
 const goHome = () => {
-    router.push({ name: 'RoleSelect' })
+    router.push({ name: 'SignIn' })
 }
 
 const signInWithGoogle = async () => {
@@ -94,19 +94,31 @@ const signInWithGoogle = async () => {
         const roleFromBackend = res.data.role
         const roleFromQuery = route.query.role || ''
 
-        const isValid =
-            (roleFromQuery === 'admin' && ['admin', 'staff'].includes(roleFromBackend)) ||
-            (roleFromQuery === 'staff' && roleFromBackend === 'staff') ||
-            (roleFromQuery === 'student' && roleFromBackend === 'student')
-
-        if (!isValid) {
-            errorMessage.value = messages[lang.value].error_role
-            return
+        if (roleFromQuery) {
+            const isValid =
+                (roleFromQuery === 'admin' && ['admin', 'staff'].includes(roleFromBackend)) ||
+                (roleFromQuery === 'staff' && roleFromBackend === 'staff') ||
+                (roleFromQuery === 'student' && roleFromBackend === 'student')
+            if (!isValid) {
+                errorMessage.value = messages[lang.value].error_role
+                return
+            }
         }
 
         // ใช้ชื่อจาก backend ที่ส่งมาจากฐานข้อมูล
-        localStorage.setItem('name', res.data.name)
+        // localStorage.setItem('name', res.data.name)
         localStorage.setItem('email', user.email)
+        // localStorage.setItem('name', user.name)
+
+  // - student: ใช้ชื่อที่ตั้งในบัญชี Google (displayName)
+  // - staff/admin: ใช้ชื่อจาก backend เป็นหลัก (fallback เป็น displayName)
+  if (roleFromBackend === 'student') {
+     const displayName = (user.displayName || '').trim()
+     localStorage.setItem('name', displayName || user.email.split('@')[0])
+   } else {
+     localStorage.setItem('name', res.data.name || user.displayName || '')
+   }
+
 
         if (roleFromBackend === 'admin') {
             localStorage.setItem('staff_ID', res.data.staff_ID)

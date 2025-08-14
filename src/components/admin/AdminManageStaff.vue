@@ -3,7 +3,7 @@
     <!-- ส่วนจัดการบุคลากร -->
     <v-row justify="space-between" align="center" class="mb-4">
       <h2 class="text-h6 font-weight-bold">จัดการบุคลากร</h2>
-      <v-btn color="#009199" prepend-icon="mdi-plus" @click="dialogStaff = true">
+      <v-btn color="deep-purple-lighten-2" prepend-icon="mdi-plus" @click="dialogStaff = true">
         เพิ่มบุคลากร
       </v-btn>
 
@@ -35,13 +35,17 @@
     <v-dialog v-model="dialogStaff" max-width="500">
       <v-card>
         <v-card-text>
-          <v-text-field v-model="formStaff.name" label="ชื่อ" />
-          <v-text-field v-model="formStaff.surname" label="นามสกุล" />
-          <v-text-field v-model="formStaff.email" label="อีเมล" />
-          <v-text-field v-model="formStaff.phone" label="เบอร์โทรติดต่อ" />
+          <v-text-field v-model="formStaff.name" label="ชื่อ" variant="outlined" prepend-inner-icon="mdi-account"
+            density="comfortable" class="mb-3" color="teal" />
+          <v-text-field v-model="formStaff.surname" label="นามสกุล" variant="outlined" prepend-inner-icon="mdi-account"
+            density="comfortable" class="mb-3" color="teal" />
+          <v-text-field v-model="formStaff.email" label="อีเมล" variant="outlined" prepend-inner-icon="mdi-email"
+            type="email" density="comfortable" class="mb-3" color="teal" />
+          <v-text-field v-model="formStaff.phone" label="เบอร์โทรติดต่อ" variant="outlined"
+            prepend-inner-icon="mdi-phone" type="tel" density="comfortable" class="mb-3" color="teal" />
         </v-card-text>
         <v-card-actions>
-          <v-btn color="green" block class="text-white" @click="addStaff">
+          <v-btn color="deep-purple-darken-2" block class="text-white" @click="addStaff">
             เพิ่ม
           </v-btn>
         </v-card-actions>
@@ -51,7 +55,7 @@
     <!-- ส่วนจัดการสถานที่ -->
     <v-row justify="space-between" align="center" class="my-8">
       <h2 class="text-h6 font-weight-bold">จัดการสถานที่ให้บริการ</h2>
-      <v-btn color="#009199" prepend-icon="mdi-plus" @click="dialogPlace = true">
+      <v-btn color="blue-darken-2" prepend-icon="mdi-plus" @click="dialogPlace = true">
         เพิ่มสถานที่
       </v-btn>
 
@@ -80,14 +84,16 @@
     <!-- Dialog เพิ่มสถานที่ -->
     <v-dialog v-model="dialogPlace" max-width="500">
       <v-card>
-        <v-card-title class="text-h6">เพิ่มสถานที่</v-card-title>
+        <v-card-title class="text-h6 font-weight-bold">เพิ่มสถานที่</v-card-title>
         <v-card-text>
-          <v-text-field v-model="formPlace.name" label="ชื่อสถานที่" />
-          <v-select v-model="formPlace.target" label="สำหรับนักศึกษา" :items="['นักศึกษาไทย', 'นักศึกษาต่างชาติ']" />
+          <v-text-field v-model="formPlace.name" label="ชื่อสถานที่" prepend-inner-icon="mdi-map-marker"
+            variant="outlined" density="comfortable" color="teal" class="mb-3" />
+          <v-select v-model="formPlace.target" label="สำหรับนักศึกษา" :items="['นักศึกษาไทย', 'นักศึกษาต่างชาติ']"
+            prepend-inner-icon="mdi-account-group" variant="outlined" density="comfortable" color="teal" class="mb-3" />
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn text @click="dialogPlace = false">ยกเลิก</v-btn>
-          <v-btn color="#009199" @click="addPlace">เพิ่ม</v-btn>
+          <v-btn color="deep-purple-darken-2" class="text-white" @click="addPlace">เพิ่ม</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -95,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"; 
+import { ref, computed } from "vue";
 import { onMounted } from "vue";
 import axios from "axios";
 
