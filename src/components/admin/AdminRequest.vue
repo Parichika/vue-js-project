@@ -34,11 +34,11 @@
                 <div style="padding: 8px 12px;">{{ item.service_ID == 4 && item.other_type ? item.other_type :
                   item.service_type || 'ไม่ระบุ' }} </div>
               </td>
-              <td>{{ item.name || '-' }}</td>
+              <td>{{ item.full_name || '-' }}</td>
               <td>{{ item.user_email }}</td>
               <td>{{ item.phone_number }}</td>
               <td class="text-center">
-                <v-chip v-if="item.status === 'pending'" color="yellow-darken-2" text-color="black"
+                <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black"
                   @click="openAssignDialog(item)">
                   <v-icon start small>mdi-timer-sand</v-icon>
                   รอดำเนินการ
@@ -70,7 +70,7 @@
             <v-card-text v-if="selectedAppointment" class="pa-0">
               <!-- กลุ่ม 1: ข้อมูลส่วนตัว -->
               <div class="mb-4" style="line-height: 1.6;">
-                <p><strong>ชื่อ:</strong> {{ selectedAppointment.name || '-' }}</p>
+                <p><strong>ชื่อ:</strong> {{ selectedAppointment.full_name || '-' }}</p>
                 <p><strong>อีเมล:</strong> {{ selectedAppointment.user_email }}</p>
                 <p><strong>เบอร์โทร:</strong> {{ selectedAppointment.phone_number }}</p>
               </div>

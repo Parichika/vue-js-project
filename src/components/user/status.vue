@@ -13,8 +13,9 @@
               <th class="text-center text-white" style="width: 14%">{{ t("col_status") }}</th>
             </tr>
           </thead>
+
           <tbody style="background-color: #f0fafa">
-            <tr v-for="item in paginatedBookings" :key="item.appointment_ID">
+            <tr v-for="(item, index) in paginatedBookings" :key="item.appointment_ID">
               <td class="text-start">{{ item.date }}</td>
               <td class="text-start">{{ item.time }}</td>
               <td class="text-start">{{ item.place_name }}</td>
@@ -43,8 +44,12 @@
                     {{ t("status_completed") }}
                   </v-chip>
 
-                  <v-btn v-if="item.status === 'pending'" icon size="small" color="red"
-                    @click="openCancelDialog(index)">
+                  <!-- ปุ่มยกเลิก เฉพาะ pending -->
+                  <v-btn
+                    v-if="item.status === 'pending'"
+                    icon size="small" color="red"
+                    @click="openCancelDialog(index)"
+                  >
                     <v-icon>mdi-delete</v-icon>
                   </v-btn>
                 </div>
@@ -53,34 +58,39 @@
           </tbody>
         </v-table>
 
-         <v-pagination v-model="page" :length="pageCount" :total-visible="5" next-icon="mdi-chevron-right"
-          prev-icon="mdi-chevron-left" class="mt-6 d-flex justify-center" />
+        <!-- Pagination -->
+        <v-pagination
+          v-model="page"
+          :length="pageCount"
+          :total-visible="5"
+          next-icon="mdi-chevron-right"
+          prev-icon="mdi-chevron-left"
+          class="mt-6 d-flex justify-center"
+        />
 
-        <!-- Dialog สำหรับยกเลิก -->
-        <v-dialog v-model="cancelDialog" width="500">
-          <v-card>
-            <v-btn icon density="compact" elevation="0" @click="cancelDialog = false"
-              style="position: absolute; top: 8px; right: 8px; min-width: 28px; height: 28px;">
-              <v-icon size="18">mdi-close</v-icon>
-            </v-btn>
+        <!-- Dialog ยืนยันการยกเลิก (ดีไซน์แบบตัวอย่าง) -->
+        <v-dialog v-model="cancelDialog" max-width="520" persistent>
+          <v-card class="pa-6 text-center" elevation="8">
 
-            <v-card-title class="text-h6 font-weight-bold">
-              {{ t("cancel_reason") }}
-            </v-card-title>
 
-            <v-card-text>
-              <v-text-field v-model="cancelReason" label="กรอกเหตุผลในการยกเลิก" variant="outlined"
-                density="comfortable" required />
-            </v-card-text>
+            <!-- หัวข้อ -->
+            <div class="text-h5 font-weight-bold mb-2">
+              {{ props.lang === 'th' ? 'คุณต้องการยกเลิกการจองหรือไม่?' : 'Are you sure?' }}
+            </div>
 
-            <v-card-actions class="justify-end">
-              <v-btn color="red" @click="confirmCancel">
-                {{ t("status_cancelled") }}
+            <!-- ปุ่มล่าง -->
+            <div class="d-flex justify-center ga-3 mt-4">
+              <v-btn color="error" variant="flat" class="text-center"
+                     @click="cancelDialog = false">
+                {{ props.lang === 'th' ? 'ยกเลิก' : 'Cancel' }}
               </v-btn>
-            </v-card-actions>
+              <v-btn color="primary" variant="flat" class="text-center"
+                     @click="confirmCancel">
+                {{ props.lang === 'th' ? 'ยืนยัน' : 'Confirm' }}
+              </v-btn>
+            </div>
           </v-card>
         </v-dialog>
-
       </v-container>
     </v-main>
   </v-app>
@@ -90,28 +100,23 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 
-// รับ props.lang และ props.email
+// props
 const props = defineProps({
   lang: String,
   email: String,
 });
-const translatedBookings = computed(() => bookings.value);
 
 const page = ref(1);
 const cancelDialog = ref(false);
-const cancelReason = ref("");
 const selectedIndex = ref(null);
 const bookings = ref([]);
 
-// ฟังก์ชันดึงข้อมูลการจอง
+// ดึงข้อมูลการจอง
 const fetchBookings = async () => {
   try {
     const response = await axios.get("/api/appointments/status", {
       params: { email: props.email },
     });
-    console.log("bookings response =", response.data);
-    console.log("Received booking data:", response.data);
-
     bookings.value = response.data.map((item) => {
       let formattedDate = "-";
       if (item.date) {
@@ -126,80 +131,55 @@ const fetchBookings = async () => {
         ...item,
         date: formattedDate,
         staff: item.first_name ? `${item.first_name} ${item.last_name}` : "-",
-        type:
-          item.service_ID === 4 && item.other_type
-            ? item.other_type
-            : item.service_type || "-",
-        location: item.place_name || "-",
+        type: item.service_ID === 4 && item.other_type ? item.other_type : (item.service_type || "-"),
+        place_name: item.place_name || "-",
         status: item.status || "pending",
         appointment_ID: item.appointment_ID || "",
-        service_ID: item.service_ID,
-        other_type: item.other_type,
       };
     });
-
   } catch (error) {
     console.error("Error fetching bookings:", error);
   }
 };
 
-onMounted(() => {
-  fetchBookings();
-});
+onMounted(fetchBookings);
 
-const openCancelDialog = (index) => {
-  selectedIndex.value = index;
-  console.log("Selected booking index:", selectedIndex.value);  // ตรวจสอบว่า selectedIndex มีค่าถูกต้อง
-  cancelReason.value = "";
+// เปิด dialog และ map index ให้ตรงกับอาร์เรย์จริง (รองรับเพจิเนชัน)
+const openCancelDialog = (pageIndex) => {
+  selectedIndex.value = (page.value - 1) * 7 + pageIndex;
   cancelDialog.value = true;
 };
 
-
-
-// ฟังก์ชันสำหรับยกเลิกการจอง
+// ยกเลิกโดยไม่ต้องกรอกเหตุผล (ไม่ส่ง reason)
 const confirmCancel = async () => {
-  if (!cancelReason.value.trim()) {
-    alert("กรุณากรอกเหตุผลในการยกเลิก");
+  if (selectedIndex.value == null || !bookings.value[selectedIndex.value]) {
+    alert(props.lang === 'th' ? "ไม่พบรายการที่ต้องการยกเลิก" : "Booking not found");
     return;
   }
 
-  if (selectedIndex.value !== null && bookings.value[selectedIndex.value]) {
-    const item = bookings.value[selectedIndex.value];
-    console.log("Cancel request data: ", {
-      appointmentID: item.appointment_ID,
-      reason: cancelReason.value
-    });
+  const item = bookings.value[selectedIndex.value];
+  if (!item.appointment_ID) {
+    alert(props.lang === 'th' ? "ไม่พบ ID ของการจองนี้" : "Appointment ID not found");
+    return;
+  }
 
-    // ตรวจสอบว่า appointment_ID ถูกต้อง
-    if (!item.appointment_ID) {
-      alert("ไม่พบ ID ของการจองนี้");
-      return;
+  try {
+    const res = await axios.put(`/api/appointments/${item.appointment_ID}/cancel`);
+    const okMsg = ["Appointment cancelled and reason saved", "Appointment cancelled"];
+    if (okMsg.includes(res?.data?.message)) {
+      bookings.value[selectedIndex.value].status = "cancelled";
+      cancelDialog.value = false;
+      alert(props.lang === 'th' ? "ยกเลิกการจองเรียบร้อยแล้ว" : "Appointment cancelled");
+    } else {
+      alert(props.lang === 'th' ? "เกิดข้อผิดพลาดในการยกเลิกการจอง" : "Cancellation failed");
     }
-
-    try {
-      // ส่งคำขอ PUT ไปที่เซิร์ฟเวอร์เพื่อยกเลิกการจอง
-      const response = await axios.put(`/api/appointments/${item.appointment_ID}/cancel`, {
-        reason: cancelReason.value,
-      });
-
-      if (response.data.message === "Appointment cancelled and reason saved") {
-        bookings.value[selectedIndex.value].status = "cancelled";
-        cancelDialog.value = false;
-        alert("ยกเลิกการจองเรียบร้อยแล้ว");
-      } else {
-        alert("เกิดข้อผิดพลาดในการยกเลิกการจอง");
-      }
-    } catch (error) {
-      console.error("cancel error:", error);
-      alert("เกิดข้อผิดพลาดในการยกเลิกการจอง");
-    }
+  } catch (e) {
+    console.error("cancel error:", e);
+    alert(props.lang === 'th' ? "เกิดข้อผิดพลาดในการยกเลิกการจอง" : "Cancellation error");
   }
 };
 
-
-
-
-// ภาษา
+// แปลภาษา
 const translations = {
   th: {
     logout: "ออกจากระบบ",
@@ -238,18 +218,26 @@ const translations = {
     status_completed: "Completed",
   },
 };
-
 const t = (key) => computed(() => translations[props.lang][key]).value;
 
-// แสดงเฉพาะหน้าปัจจุบัน
-const filteredBookings = computed(() => bookings.value)
-
+// เพจิเนชัน
+const filteredBookings = computed(() => bookings.value);
 const paginatedBookings = computed(() => {
-  const start = (page.value - 1) * 7
-  return filteredBookings.value.slice(start, start + 7)
-})
-
-const pageCount = computed(() =>
-  Math.ceil(filteredBookings.value.length / 7)
-)
+  const start = (page.value - 1) * 7;
+  return filteredBookings.value.slice(start, start + 7);
+});
+const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 7));
 </script>
+
+<style scoped>
+.confirm-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  margin-top: 8px;
+  background: #fff3e0;  /* ส้มอ่อน */
+  color: #ff9800;       /* ส้ม */
+}
+</style>

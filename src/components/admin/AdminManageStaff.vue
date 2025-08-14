@@ -3,10 +3,9 @@
     <!-- ส่วนจัดการบุคลากร -->
     <v-row justify="space-between" align="center" class="mb-4">
       <h2 class="text-h6 font-weight-bold">จัดการบุคลากร</h2>
-      <v-btn color="deep-purple-lighten-2" prepend-icon="mdi-plus" @click="dialogStaff = true">
+      <v-btn color="pink-lighten-4" prepend-icon="mdi-plus" @click="dialogStaff = true" elevation="0">
         เพิ่มบุคลากร
       </v-btn>
-
     </v-row>
 
     <v-table density="comfortable">
@@ -34,7 +33,10 @@
     <!-- Dialog เพิ่มบุคลากร -->
     <v-dialog v-model="dialogStaff" max-width="500">
       <v-card>
-        <v-card-text>
+        <v-card-title class="text-h6 font-weight-bold text-white bg-pink-darken-2">
+          เพิ่มบุคลากร
+        </v-card-title>
+        <v-card-text class="pb-0">
           <v-text-field v-model="formStaff.name" label="ชื่อ" variant="outlined" prepend-inner-icon="mdi-account"
             density="comfortable" class="mb-3" color="teal" />
           <v-text-field v-model="formStaff.surname" label="นามสกุล" variant="outlined" prepend-inner-icon="mdi-account"
@@ -44,10 +46,9 @@
           <v-text-field v-model="formStaff.phone" label="เบอร์โทรติดต่อ" variant="outlined"
             prepend-inner-icon="mdi-phone" type="tel" density="comfortable" class="mb-3" color="teal" />
         </v-card-text>
-        <v-card-actions>
-          <v-btn color="deep-purple-darken-2" block class="text-white" @click="addStaff">
-            เพิ่ม
-          </v-btn>
+        <v-card-actions class="justify-end py-2">
+          <v-btn text @click="dialogStaff = false">ยกเลิก</v-btn>
+          <v-btn color="pink-darken-2" class="text-white" @click="addStaff">เพิ่ม</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -55,10 +56,9 @@
     <!-- ส่วนจัดการสถานที่ -->
     <v-row justify="space-between" align="center" class="my-8">
       <h2 class="text-h6 font-weight-bold">จัดการสถานที่ให้บริการ</h2>
-      <v-btn color="blue-darken-2" prepend-icon="mdi-plus" @click="dialogPlace = true">
+      <v-btn color="blue-lighten-4" prepend-icon="mdi-plus" @click="dialogPlace = true" elevation="0">
         เพิ่มสถานที่
       </v-btn>
-
     </v-row>
 
     <v-table density="comfortable">
@@ -84,16 +84,18 @@
     <!-- Dialog เพิ่มสถานที่ -->
     <v-dialog v-model="dialogPlace" max-width="500">
       <v-card>
-        <v-card-title class="text-h6 font-weight-bold">เพิ่มสถานที่</v-card-title>
-        <v-card-text>
+        <v-card-title class="text-h6 font-weight-bold text-white bg-blue-darken-2">
+          เพิ่มสถานที่
+        </v-card-title>
+        <v-card-text class="pb-0">
           <v-text-field v-model="formPlace.name" label="ชื่อสถานที่" prepend-inner-icon="mdi-map-marker"
             variant="outlined" density="comfortable" color="teal" class="mb-3" />
           <v-select v-model="formPlace.target" label="สำหรับนักศึกษา" :items="['นักศึกษาไทย', 'นักศึกษาต่างชาติ']"
             prepend-inner-icon="mdi-account-group" variant="outlined" density="comfortable" color="teal" class="mb-3" />
         </v-card-text>
-        <v-card-actions class="justify-end">
+        <v-card-actions class="justify-end py-2">
           <v-btn text @click="dialogPlace = false">ยกเลิก</v-btn>
-          <v-btn color="deep-purple-darken-2" class="text-white" @click="addPlace">เพิ่ม</v-btn>
+          <v-btn color="blue-darken-2" class="text-white" @click="addPlace">เพิ่ม</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

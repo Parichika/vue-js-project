@@ -1,30 +1,31 @@
 <template>
   <v-app>
-    <!-- App Bar -->
-    <v-app-bar app flat color="white" height="150">
+     <!-- App Bar -->
+    <v-app-bar app flat color="white" height="100">
       <v-container fluid class="d-flex justify-space-between align-center px-6">
+        <!-- โลโก้ -->
         <div class="d-flex align-center">
           <img src="/Header_Counseling_MFU_Thai.png" alt="MFU Logo" height="120" class="me-4" />
         </div>
+
+        <!-- ส่วนขวา: ปุ่มออกจากระบบ + เปลี่ยนภาษา -->
         <div class="d-flex flex-column align-end">
           <v-btn size="small" variant="text" color="teal" class="mb-4 text-subtitle-1" @click="logout">
             {{ t("logout") }}
             <v-icon size="25" class="mx-2">mdi-logout</v-icon>
           </v-btn>
-          <div class="text-subtitle-1 text-grey-darken-2 me-3" style="transform: translateY(-4px)">
-            {{ name }}
+          <div class="d-flex align-center">
+            <div class="text-subtitle-1 text-grey-darken-2 me-3">
+              {{ name }}
+            </div>
+            <v-btn icon size="small" class="me-2" color="teal" :variant="lang === 'th' ? 'flat' : 'outlined'"
+              @click="lang = 'th'">
+              <span class="text-button font-weight-bold">TH</span>
+            </v-btn>
+            <v-btn icon size="small" color="teal" :variant="lang === 'en' ? 'flat' : 'outlined'" @click="lang = 'en'">
+              <span class="text-button font-weight-bold">EN</span>
+            </v-btn>
           </div>
-          <v-row align="center" class="px-6">
-            <v-col cols="auto">
-              <v-btn icon size="small" class="me-2" color="teal" :variant="lang === 'th' ? 'flat' : 'outlined'"
-                @click="lang = 'th'">
-                <span class="text-button font-weight-bold">TH</span>
-              </v-btn>
-              <v-btn icon size="small" color="teal" :variant="lang === 'en' ? 'flat' : 'outlined'" @click="lang = 'en'">
-                <span class="text-button font-weight-bold">EN</span>
-              </v-btn>
-            </v-col>
-          </v-row>
         </div>
       </v-container>
 
