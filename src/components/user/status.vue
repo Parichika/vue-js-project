@@ -5,12 +5,13 @@
         <v-table style="table-layout: fixed; width: 100%">
           <thead style="background-color: #009199; color: white">
             <tr>
-              <th class="text-center text-white" style="width: 12%">{{ t("col_date") }}</th>
+              <th class="text-center text-white" style="width: 10%">{{ t("col_date") }}</th>
               <th class="text-center text-white" style="width: 12%">{{ t("col_time") }}</th>
-              <th class="text-center text-white" style="width: 20%">{{ t("col_location") }}</th>
-              <th class="text-center text-white" style="width: 25%">{{ t("col_type") }}</th>
-              <th class="text-center text-white" style="width: 19%">{{ t("col_staff") }}</th>
-              <th class="text-center text-white" style="width: 14%">{{ t("col_status") }}</th>
+              <th class="text-center text-white" style="width: 18%">{{ t("col_location") }}</th>
+              <th class="text-center text-white" style="width: 22%">{{ t("col_type") }}</th>
+              <th class="text-center text-white" style="width: 15%">{{ t("col_staff") }}</th>
+              <th class="text-center text-white" style="width: 12%">{{ t("col_status") }}</th>
+              <th class="text-center text-white" style="width: 11%">{{ t("col_note") }}</th> <!-- เพิ่ม -->
             </tr>
           </thead>
 
@@ -23,7 +24,7 @@
               <td class="text-start">{{ item.staff || "-" }}</td>
               <td>
                 <div class="d-flex align-center justify-center ga-2">
-                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black">
+                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black" @click="openCancelDialog(index)">
                     <v-icon start small>mdi-timer-sand</v-icon>
                     {{ t("status_pending") }}
                   </v-chip>
@@ -45,14 +46,18 @@
                   </v-chip>
 
                   <!-- ปุ่มยกเลิก เฉพาะ pending -->
-                  <v-btn
-                    v-if="item.status === 'pending'"
-                    icon size="small" color="red"
-                    @click="openCancelDialog(index)"
-                  >
+                  <!-- <v-btn v-if="item.status === 'pending'" icon size="small" color="red" @click="openCancelDialog(index)">
                     <v-icon>mdi-delete</v-icon>
-                  </v-btn>
+                  </v-btn> -->
                 </div>
+              </td> 
+
+              <!-- คอลัมน์หมายเหตุ -->
+              <td class="text-start">
+                <span v-if="item.status === 'rejected' && item.note" :title="item.note">
+                  {{ item.note }}
+                </span>
+                <span v-else>-</span>
               </td>
             </tr>
           </tbody>
@@ -68,24 +73,17 @@
           class="mt-6 d-flex justify-center"
         />
 
-        <!-- Dialog ยืนยันการยกเลิก (ดีไซน์แบบตัวอย่าง) -->
+        <!-- Dialog ยืนยันการยกเลิก -->
         <v-dialog v-model="cancelDialog" max-width="520" persistent>
           <v-card class="pa-6 text-center" elevation="8">
-
-
-            <!-- หัวข้อ -->
             <div class="text-h5 font-weight-bold mb-2">
               {{ props.lang === 'th' ? 'คุณต้องการยกเลิกการจองหรือไม่?' : 'Are you sure?' }}
             </div>
-
-            <!-- ปุ่มล่าง -->
             <div class="d-flex justify-center ga-3 mt-4">
-              <v-btn color="error" variant="flat" class="text-center"
-                     @click="cancelDialog = false">
+              <v-btn color="error" variant="flat" @click="cancelDialog = false">
                 {{ props.lang === 'th' ? 'ยกเลิก' : 'Cancel' }}
               </v-btn>
-              <v-btn color="primary" variant="flat" class="text-center"
-                     @click="confirmCancel">
+              <v-btn color="primary" variant="flat" @click="confirmCancel">
                 {{ props.lang === 'th' ? 'ยืนยัน' : 'Confirm' }}
               </v-btn>
             </div>
@@ -111,7 +109,7 @@ const cancelDialog = ref(false);
 const selectedIndex = ref(null);
 const bookings = ref([]);
 
-// ดึงข้อมูลการจอง
+// ดึงข้อมูลการจอง (ดึง reject_reason มาด้วย)
 const fetchBookings = async () => {
   try {
     const response = await axios.get("/api/appointments/status", {
@@ -135,6 +133,7 @@ const fetchBookings = async () => {
         place_name: item.place_name || "-",
         status: item.status || "pending",
         appointment_ID: item.appointment_ID || "",
+        note: item.reject_reason || "", // <<< เพิ่ม map เป็น note
       };
     });
   } catch (error) {
@@ -156,7 +155,6 @@ const confirmCancel = async () => {
     alert(props.lang === 'th' ? "ไม่พบรายการที่ต้องการยกเลิก" : "Booking not found");
     return;
   }
-
   const item = bookings.value[selectedIndex.value];
   if (!item.appointment_ID) {
     alert(props.lang === 'th' ? "ไม่พบ ID ของการจองนี้" : "Appointment ID not found");
@@ -192,11 +190,11 @@ const translations = {
     col_type: "ประเภท",
     col_staff: "ผู้ดูแล",
     col_status: "สถานะ",
+    col_note: "หมายเหตุ", // <<< เพิ่ม
     status_pending: "รอดำเนินการ",
     status_approved: "อนุมัติ",
     status_rejected: "ปฏิเสธ",
     status_cancelled: "ยกเลิกการจอง",
-    cancel_reason: "เหตุผลในการยกเลิก",
     status_completed: "เสร็จสิ้น",
   },
   en: {
@@ -210,11 +208,11 @@ const translations = {
     col_type: "Type",
     col_staff: "Staff",
     col_status: "Status",
+    col_note: "Note", // <<< เพิ่ม
     status_pending: "Pending",
     status_approved: "Approved",
     status_rejected: "Rejected",
     status_cancelled: "Cancelled",
-    cancel_reason: "Cancellation Reason",
     status_completed: "Completed",
   },
 };
@@ -237,7 +235,7 @@ const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 7));
   display: grid;
   place-items: center;
   margin-top: 8px;
-  background: #fff3e0;  /* ส้มอ่อน */
-  color: #ff9800;       /* ส้ม */
+  background: #fff3e0;
+  color: #ff9800;
 }
 </style>

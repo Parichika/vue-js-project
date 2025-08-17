@@ -6,35 +6,16 @@
           {{ t("title") }}
         </h2>
 
-        <!-- ✅ ช่องกรอกชื่อ — เป็นช่องแรกสุดของฟอร์ม -->
-        <v-text-field
-          v-model="form.fullName"
-          :label="t('full_name')"
-          variant="outlined"
-          density="comfortable"
-          required
-        />
+        <!-- ชื่อ-นามสกุล -->
+        <v-text-field v-model="form.fullName" :label="t('full_name')" variant="outlined" density="comfortable"
+          required />
 
-        <v-text-field
-          v-model="form.date"
-          :label="t('date')"
-          type="date"
-          variant="outlined"
-          density="comfortable"
-          required
-        />
+        <!-- วันที่: ล็อกเฉพาะวันย้อนหลัง -->
+        <v-text-field v-model="form.date" :label="t('date')" type="date" :min="today" variant="outlined"
+          density="comfortable" required />
 
-        <v-select
-          v-model="form.time"
-          :label="t('time')"
-          :items="timeOptions"
-          item-title="label"
-          item-value="value"
-          item-disabled="disabled"
-          variant="outlined"
-          density="comfortable"
-          required
-        />
+        <v-select v-model="form.time" :label="t('time')" :items="timeOptions" item-title="label" item-value="value"
+          variant="outlined" density="comfortable" required />
 
         <v-radio-group v-model="form.nationality" :label="t('nationality')" class="mt-4">
           <v-radio :label="t('thai')" value="ไทย" />
@@ -45,14 +26,8 @@
           <v-radio v-for="option in channelOptions" :key="option" :label="option" :value="option" />
         </v-radio-group>
 
-        <v-text-field
-          v-model="form.phone"
-          :label="t('phone')"
-          type="tel"
-          variant="outlined"
-          density="comfortable"
-          required
-        />
+        <v-text-field v-model="form.phone" :label="t('phone')" type="tel" variant="outlined" density="comfortable"
+          required />
 
         <v-radio-group v-model="form.serviceType" :label="t('service_type')" class="mt-4">
           <v-radio :label="t('life')" value="life" />
@@ -61,13 +36,8 @@
           <v-radio :label="t('other')" value="other" />
         </v-radio-group>
 
-        <v-text-field
-          v-if="form.serviceType === 'other'"
-          v-model="form.otherService"
-          :label="t('specify')"
-          variant="outlined"
-          density="comfortable"
-        />
+        <v-text-field v-if="form.serviceType === 'other'" v-model="form.otherService" :label="t('specify')"
+          variant="outlined" density="comfortable" />
 
         <v-btn class="mt-6" color="#009199" variant="flat" size="large" block @click="submitForm">
           {{ t("submit") }}
@@ -80,6 +50,7 @@
 <script setup>
 import { ref, computed, defineProps, watch, onMounted } from "vue";
 import axios from "axios";
+import dayjs from "dayjs";
 
 // props และ translations
 const props = defineProps({ lang: { type: String, default: "th" } });
@@ -134,32 +105,30 @@ const t = (key) => computed(() => translations[lang.value]?.[key] ?? `[${key}]`)
 
 // ฟอร์มข้อมูล
 const form = ref({
-  fullName: "",   // ✅ เพิ่มช่องชื่อ (เป็นช่องแรกสุดใน template)
+  fullName: "",
   date: "",
   time: "",
-  nationality: "",
+  nationality: "ไทย",
   channel: "",
   phone: "",
   serviceType: "",
   otherService: "",
 });
 
-const occupiedTimes = ref([]);
+// แสดงเฉพาะการใช้งานปัจจุบัน
+const occupiedTimes = ref([]); // ยังโหลดได้ แต่จะไม่เอาไปปิดเวลาแล้ว
 const allPlaces = ref([]);
 
+const today = computed(() => dayjs().format("YYYY-MM-DD"));
+
+// ตัวเลือกเวลา (ไม่ปิดใด ๆ)
 const rawTimeOptions = [
   { label: "09.00 - 10.30 น.", value: "09:00-10:30" },
   { label: "10.30 - 12.00 น.", value: "10:30-12:00" },
   { label: "13.00 - 14.30 น.", value: "13:00-14:30" },
   { label: "14.30 - 16.00 น.", value: "14:30-16:00" },
 ];
-
-const timeOptions = computed(() =>
-  rawTimeOptions.map((opt) => ({
-    ...opt,
-    disabled: occupiedTimes.value.includes(opt.value),
-  }))
-);
+const timeOptions = computed(() => rawTimeOptions); 
 
 const channelOptions = computed(() => {
   if (!form.value.nationality) return [];
@@ -172,7 +141,7 @@ const channelOptions = computed(() => {
     .map((p) => p.place_name);
 });
 
-// โหลดเวลาที่ถูกจอง
+// โหลดเวลาที่ถูกจอง (แม้จะไม่ใช้ปิดเวลาแล้ว เผื่ออนาคต)
 const fetchOccupiedTimes = async () => {
   if (!form.value.date || !form.value.channel) {
     occupiedTimes.value = [];
@@ -185,7 +154,7 @@ const fetchOccupiedTimes = async () => {
         place_name: form.value.channel,
       },
     });
-    occupiedTimes.value = res.data;
+    occupiedTimes.value = res.data || [];
   } catch (err) {
     console.error("โหลดเวลาที่ถูกจองล้มเหลว:", err);
     occupiedTimes.value = [];
@@ -196,18 +165,32 @@ const fetchOccupiedTimes = async () => {
 const fetchPlaces = async () => {
   try {
     const res = await axios.get("http://localhost:3000/api/places");
-    allPlaces.value = res.data;
+    allPlaces.value = res.data || [];
+
+    // ✅ ตั้งค่า default channel ถ้ายังไม่ได้เลือก
+    if (!form.value.channel && form.value.nationality) {
+      const firstOpenPlace = allPlaces.value.find(
+        (p) =>
+          p.place_status === "open" &&
+          p.target_group === (form.value.nationality === "ไทย" ? "ไทย" : "ต่างชาติ")
+      );
+      if (firstOpenPlace) {
+        form.value.channel = firstOpenPlace.place_name;
+      }
+    }
   } catch (err) {
     console.error("โหลดสถานที่ล้มเหลว:", err);
     allPlaces.value = [];
   }
 };
 
-// อัปเดตทุกครั้งที่เลือกวันที่หรือสถานที่
+
+// อัปเดตเมื่อวันที่/สถานที่เปลี่ยน — รีเฟรชข้อมูล (ไม่ปิดเวลา)
 watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes);
+
 onMounted(() => {
-  fetchOccupiedTimes();
   fetchPlaces();
+  fetchOccupiedTimes();
 });
 
 // ส่งข้อมูลจองไป backend
@@ -224,7 +207,7 @@ const submitForm = async () => {
   }
 
   const payload = {
-    full_name: form.value.fullName,       // ✅ ส่งชื่อที่ผู้ใช้กรอก
+    full_name: form.value.fullName,
     date: form.value.date,
     time: form.value.time,
     phone: form.value.phone,
@@ -232,15 +215,15 @@ const submitForm = async () => {
     otherService: form.value.otherService || null,
     channel: form.value.channel,
     nationality: form.value.nationality,
-    email: localStorage.getItem("email") || null,   // เก็บไว้เผื่อ backend ใช้
-    name: localStorage.getItem("name") || null,     // (คงไว้เพื่อไม่ให้ backend เก่าพัง)
+    email: localStorage.getItem("email") || null,
+    name: localStorage.getItem("name") || null,
   };
 
   try {
     await axios.post("http://localhost:3000/api/appointments", payload);
     alert(lang.value === "th" ? "จองสำเร็จ!" : "Appointment booked!");
-    resetForm();          // ล้างข้อมูลฟอร์ม
-    fetchOccupiedTimes(); // โหลดเวลาที่ถูกจองใหม่
+    resetForm();
+    fetchOccupiedTimes();
   } catch (err) {
     const msg = err.response?.data?.error || err.message || "เกิดข้อผิดพลาด";
     alert(msg);
@@ -252,11 +235,10 @@ const resetForm = () => {
     fullName: "",
     date: "",
     time: "",
-    nationality: "",
-    channel: "",
     phone: "",
     serviceType: "",
     otherService: "",
   };
+  occupiedTimes.value = [];
 };
 </script>

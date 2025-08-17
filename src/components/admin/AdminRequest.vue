@@ -9,7 +9,6 @@
           </v-col>
         </v-row>
 
-
         <!-- ตารางการจอง -->
         <v-table style="table-layout: fixed;">
           <thead style="background-color: #009199; color: white;">
@@ -50,39 +49,40 @@
         <v-pagination v-model="page" :length="pageCount" :total-visible="5" next-icon="mdi-chevron-right"
           prev-icon="mdi-chevron-left" class="mt-6 d-flex justify-center" />
 
-
         <!-- dialog -->
         <v-dialog v-model="showDialog" max-width="600px">
-          <v-card class="pa-6" style="border-radius: 12px; position: relative;">
+          <v-card class="pa-6 dialog-card" style="border-radius:12px; position:relative;">
 
-            <!-- ปุ่มปิด -->
-            <v-btn icon size="small" variant="plain" class="ma-0 pa-0"
-              style="position: absolute; top: 12px; right: 12px;" @click="showDialog = false">
-              <v-icon size="20">mdi-close</v-icon>
+            <!-- ปุ่มปิด (ลอยนอก title bar) -->
+            <v-btn icon size="small" variant="text" class="close-btn" @click="showDialog = false">
+              <v-icon size="22">mdi-close</v-icon>
             </v-btn>
 
             <!-- หัวข้อ -->
-            <v-card-title class="text-h6 font-weight-bold pa-0 mb-4">
+            <v-card-title class="text-h6 font-weight-bold pa-3 mb-4"
+              style="background-color:#009199; color:#fff; border-radius:8px;">
               ข้อมูลผู้รับบริการ
             </v-card-title>
 
             <!-- เนื้อหา -->
             <v-card-text v-if="selectedAppointment" class="pa-0">
               <!-- กลุ่ม 1: ข้อมูลส่วนตัว -->
-              <div class="mb-4" style="line-height: 1.6;">
+              <div class="mb-4 pa-3" style="line-height: 1.6; background-color: #f5f5f5; border-radius: 6px;">
                 <p><strong>ชื่อ:</strong> {{ selectedAppointment.full_name || '-' }}</p>
                 <p><strong>อีเมล:</strong> {{ selectedAppointment.user_email }}</p>
                 <p><strong>เบอร์โทร:</strong> {{ selectedAppointment.phone_number }}</p>
               </div>
 
               <!-- กลุ่ม 2: รายละเอียดการนัด -->
-              <div style="line-height: 1.6;">
+              <div class="pa-3" style="line-height: 1.6; background-color: #fafafa; border-radius: 6px;">
                 <p><strong>วันที่นัด:</strong> {{ formatDate(selectedAppointment.date) }}</p>
                 <p><strong>เวลา:</strong> {{ selectedAppointment.time }}</p>
-                <p><strong>ประเภทการบริการ:</strong> {{ selectedAppointment.service_ID == 4 &&
-                  selectedAppointment.other_type
-                  ? selectedAppointment.other_type
-                  : selectedAppointment.service_type || 'ไม่ระบุ' }}</p>
+                <p>
+                  <strong>ประเภทการบริการ:</strong>
+                  {{ selectedAppointment.service_ID == 4 && selectedAppointment.other_type
+                    ? selectedAppointment.other_type
+                    : selectedAppointment.service_type || 'ไม่ระบุ' }}
+                </p>
                 <p><strong>สถานที่:</strong> {{ selectedAppointment.place_name }}</p>
               </div>
             </v-card-text>
@@ -140,7 +140,6 @@ const confirmAssign = async () => {
   }
 }
 
-
 // ปฏิเสธเคส
 const rejectCase = async () => {
   try {
@@ -155,8 +154,6 @@ const rejectCase = async () => {
     alert('เกิดข้อผิดพลาดในการปฏิเสธเคส')
   }
 }
-
-
 
 // แปลงวันที่
 const formatDate = (dateString) => {
@@ -190,5 +187,23 @@ onMounted(fetchAppointments)
 h2 {
   font-weight: bold;
   color: #009199;
+}
+
+.dialog-card {
+  /* เผื่อพื้นที่ด้านบนสำหรับปุ่มปิด */
+  padding-top: 56px !important;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .dialog-card {
+    padding-top: 48px !important;
+  }
 }
 </style>

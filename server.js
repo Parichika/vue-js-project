@@ -209,20 +209,36 @@ app.put("/api/appointments/:id/assign", (req, res) => {
 
 app.put("/api/appointments/:id/reject", (req, res) => {
   const appointmentID = req.params.id;
-  const { staff_ID } = req.body;
+  // รองรับทั้งสองชื่อ เพื่อกันพลาดจาก front ที่ส่งมาไม่ตรง
+  const staff_ID = req.body.staff_ID;
+  const reasonRaw = req.body.reject_reason ?? req.body.reason;
+  const reason = (reasonRaw || "").trim();
+
+  console.log("PUT /reject", { appointmentID, staff_ID, reason });
 
   if (!staff_ID) return res.status(400).json({ error: "Missing staff_ID" });
+  if (!reason)   return res.status(400).json({ error: "Missing reject reason" });
 
   const sql = `
     UPDATE appointment 
-    SET status = 'rejected', staff_ID = ? 
+    SET status = 'rejected',
+        staff_ID = ?,
+        reject_reason = ?
     WHERE appointment_ID = ?
   `;
-  db.query(sql, [staff_ID, appointmentID], (err) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ message: "ปฏิเสธเคสสำเร็จ", appointmentID });
+  db.query(sql, [staff_ID, reason, appointmentID], (err, result) => {
+    if (err) {
+      console.error("Reject update error:", err);
+      return res.status(500).json({ error: "DB error" });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+    // ส่งค่ากลับมาดูให้ชัดว่า reason ถูกบันทึก
+    res.json({ message: "ปฏิเสธเคสสำเร็จ", appointmentID, reject_reason: reason });
   });
 });
+
 
 /* =========================
  *  รายการจอง (staff ดู pending)
@@ -268,7 +284,8 @@ app.get("/api/appointments/status", (req, res) => {
       a.date,
       a.time,
       a.status,
-      a.service_ID, 
+      a.service_ID,
+      a.reject_reason,  
       p.place_name,
       a.other_type,
       st.service_type,
