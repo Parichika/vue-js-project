@@ -92,13 +92,34 @@
               <v-btn color="green" variant="flat" class="text-white" @click="confirmAssign">
                 อนุมัติ
               </v-btn>
-              <v-btn color="red" variant="flat" class="text-white" @click="rejectCase">
+              <v-btn color="red" variant="flat" class="text-white" @click="openRejectDialog">
                 ปฏิเสธ
               </v-btn>
-            </v-card-actions>
 
+            </v-card-actions>
           </v-card>
         </v-dialog>
+        <!-- Dialog ย่อย: กรอกเหตุผลการปฏิเสธ -->
+        <v-dialog v-model="showRejectDialog" max-width="520px" persistent>
+          <v-card class="pa-6" style="border-radius: 12px;">
+            <v-card-title class="text-h6 font-weight-bold pa-0 mb-4">
+              ระบุเหตุผลการปฏิเสธ
+            </v-card-title>
+
+            <v-card-text class="pa-0">
+              <v-textarea v-model="rejectReason" label="เหตุผล (ต้องกรอก)" auto-grow variant="outlined" rows="3"
+                counter="500" :rules="[v => !!v && v.trim().length > 0 || 'โปรดระบุเหตุผล']" />
+            </v-card-text>
+
+            <v-card-actions class="justify-end mt-4 pa-0">
+              <v-btn variant="text" @click="closeRejectDialog">ยกเลิก</v-btn>
+              <v-btn color="red" variant="flat" class="text-white" @click="submitReject">
+                ยืนยันปฏิเสธ
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
       </v-container>
     </v-main>
   </v-app>
@@ -115,11 +136,23 @@ const router = useRouter()
 const appointments = ref([])
 const showDialog = ref(false)
 const selectedAppointment = ref(null)
+const showRejectDialog = ref(false)
+const rejectReason = ref('')
+
 
 // เปิด Dialog
 const openAssignDialog = (appointment) => {
   selectedAppointment.value = appointment
   showDialog.value = true
+}
+// เปิด/ปิด Dialog เหตุผลการปฏิเสธ
+const openRejectDialog = () => {
+  rejectReason.value = ''
+  showRejectDialog.value = true
+}
+
+const closeRejectDialog = () => {
+  showRejectDialog.value = false
 }
 
 // รับเคส
@@ -140,20 +173,30 @@ const confirmAssign = async () => {
   }
 }
 
-// ปฏิเสธเคส
-const rejectCase = async () => {
+// ส่งปฏิเสธ + เหตุผล
+const submitReject = async () => {
   try {
-    const staff_ID = localStorage.getItem('staff_ID') // ดึง staff_ID มา
+    const reason = (rejectReason.value || '').trim()
+    if (!reason) return alert('โปรดระบุเหตุผลการปฏิเสธ')
+
+    const staff_ID = localStorage.getItem('staff_ID')
     await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/reject`, {
-      staff_ID, // ส่งไปด้วย
+      staff_ID,
+      reason,               // <-- เผื่อ backend อ่านชื่อนี้
+      reject_reason: reason // <-- และชื่อนี้ด้วย
     })
+
     alert('ปฏิเสธเคสสำเร็จ')
+    showRejectDialog.value = false
     showDialog.value = false
-    fetchAppointments()
+    await fetchAppointments()
   } catch (err) {
+    console.error(err)
     alert('เกิดข้อผิดพลาดในการปฏิเสธเคส')
   }
 }
+
+
 
 // แปลงวันที่
 const formatDate = (dateString) => {

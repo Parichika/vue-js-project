@@ -39,6 +39,11 @@
         <v-text-field v-if="form.serviceType === 'other'" v-model="form.otherService" :label="t('specify')"
           variant="outlined" density="comfortable" />
 
+        <!-- ข้อความความเป็นส่วนตัว -->
+        <p class="text-body-2 mb-6" style="color: #009199;">
+          หมายเหตุ : ข้อมูลของท่านจะถูกเก็บเป็นความลับ และใช้เพื่อการนัดหมายเท่านั้น
+        </p>
+
         <v-btn class="mt-6" color="#009199" variant="flat" size="large" block @click="submitForm">
           {{ t("submit") }}
         </v-btn>
@@ -71,9 +76,9 @@ const translations = {
     msquare: "M4U (ตึก M-square)",
     phone: "หมายเลขโทรศัพท์*",
     service_type: "ประเภทการบริการ*",
-    life: "ขอรับการปรึกษาด้านการใช้ชีวิต และสุขภาพจิต",
+    life: "ขอรับการปรึกษาด้านการใช้ชีวิต และการปรับตัว",
     study: "ขอรับการปรึกษาด้านการเรียน",
-    emotion: "ระบายความรู้สึกต่างๆ",
+    emotion: "ขอรับการปรึกษาด้านสุขภาพจิต",
     other: "อื่น ๆ",
     specify: "กรุณาพิมพ์ตัวเลือกอื่นที่นี่",
     submit: "ยืนยัน",
@@ -128,7 +133,7 @@ const rawTimeOptions = [
   { label: "13.00 - 14.30 น.", value: "13:00-14:30" },
   { label: "14.30 - 16.00 น.", value: "14:30-16:00" },
 ];
-const timeOptions = computed(() => rawTimeOptions); 
+const timeOptions = computed(() => rawTimeOptions);
 
 const channelOptions = computed(() => {
   if (!form.value.nationality) return [];
