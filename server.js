@@ -188,6 +188,24 @@ app.get("/api/appointments/occupied", (req, res) => {
   );
 });
 
+/* =========================
+ *  staff รับเคส / ปฏิเสธเคส
+ * ========================= */
+app.put("/api/appointments/:id/assign", (req, res) => {
+  const appointmentID = req.params.id;
+  const { staff_ID } = req.body;
+
+  if (!staff_ID) return res.status(400).json({ error: "Missing staff_ID" });
+
+  db.query(
+    "UPDATE appointment SET staff_ID = ?, status = 'approved' WHERE appointment_ID = ?",
+    [staff_ID, appointmentID],
+    (err) => {
+      if (err) return res.status(500).json({ error: err });
+      res.json({ message: "รับเคสสำเร็จ", appointmentID });
+    }
+  );
+});
 app.put("/api/appointments/:id/reject", (req, res) => {
   const appointmentID = req.params.id;
   // รองรับทั้งสองชื่อ เพื่อกันพลาดจาก front ที่ส่งมาไม่ตรง
