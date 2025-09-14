@@ -59,7 +59,7 @@
     "rejected": "ปฏิเสธ",
     "cancelled": "ยกเลิกการจอง",
     "completed": "เสร็จสิ้น",
-    "cancel_confirm_title": "คุณต้องการยกเลิกการจองหรือไม่?",
+    "cancel_confirm_title": "คุณต้องการยกเลิกการนัดหมายหรือไม่?",
     "btn_cancel": "ยกเลิก",
     "btn_confirm": "ยืนยัน",
     "err_not_found": "ไม่พบรายการที่ต้องการยกเลิก",

@@ -74,19 +74,26 @@
         />
 
         <!-- Dialog ยืนยันการยกเลิก -->
-        <v-dialog v-model="cancelDialog" max-width="520" persistent>
-          <v-card class="pa-6 text-center" elevation="8">
-            <div class="text-h5 font-weight-bold mb-2">
-              {{ t('status.cancel_confirm_title') }}
-            </div>
-            <div class="d-flex justify-center ga-3 mt-4">
-              <v-btn color="error" variant="flat" @click="cancelDialog = false">
-                {{ t('status.btn_cancel') }}
+                <v-dialog v-model="cancelDialog" max-width="420" persistent>
+          <v-card class="py-6 px-4" elevation="12" rounded="xl">
+            <v-card-title class="d-flex flex-column align-center">
+              <div class="confirm-icon">
+                <v-icon size="48">mdi-alert-circle-outline</v-icon>
+              </div>
+              <span class="text-h6 font-weight-bold mt-3">
+                {{ props.lang === 'th' ? 'คุณต้องการยกเลิกการนัดหมายหรือไม่?' : 'Cancel appointment?' }}
+              </span>
+            </v-card-title>
+
+            <v-card-actions class="d-flex justify-center mt-4 ga-4">
+              <v-btn color="grey-lighten-2" variant="flat" rounded="lg" @click="cancelDialog = false">
+                {{ props.lang === 'th' ? 'กลับ' : 'Back' }}
               </v-btn>
-              <v-btn color="primary" variant="flat" @click="confirmCancel">
-                {{ t('status.btn_confirm') }}
+
+              <v-btn color="error" variant="flat" rounded="lg" @click="confirmCancel">
+                {{ props.lang === 'th' ? 'ยืนยัน' : 'Confirm' }}
               </v-btn>
-            </div>
+            </v-card-actions>
           </v-card>
         </v-dialog>
       </v-container>

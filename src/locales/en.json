@@ -59,7 +59,7 @@
     "rejected": "Rejected",
     "cancelled": "Cancelled",
     "completed": "Completed",
-    "cancel_confirm_title": "Are you sure?",
+    "cancel_confirm_title": "Cancel appointment?",
     "btn_cancel": "Cancel",
     "btn_confirm": "Confirm",
     "err_not_found": "Booking not found",
