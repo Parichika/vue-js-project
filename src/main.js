@@ -20,6 +20,16 @@ const vuetify = createVuetify({
       },
     },
   },
+  theme: {
+    defaultTheme: "myTheme",
+    themes: {
+      myTheme: {
+        colors: {
+          error: "#ff0000",
+        },
+      },
+    },
+  },
 });
 
 createApp(App)
