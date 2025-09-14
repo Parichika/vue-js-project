@@ -7,8 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { sendMail } = require("./utils/mailer");
-const { buildStatusEmail } = require("./utils/emailTemplates");
+
 
 
 app.use((req, res, next) => {
