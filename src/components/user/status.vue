@@ -1,3 +1,4 @@
+<!-- src/views/status.vue -->
 <template>
   <v-app>
     <v-main>
@@ -5,13 +6,13 @@
         <v-table style="table-layout: fixed; width: 100%">
           <thead style="background-color: #009199; color: white">
             <tr>
-              <th class="text-center text-white" style="width: 10%">{{ t("col_date") }}</th>
-              <th class="text-center text-white" style="width: 12%">{{ t("col_time") }}</th>
-              <th class="text-center text-white" style="width: 18%">{{ t("col_location") }}</th>
-              <th class="text-center text-white" style="width: 22%">{{ t("col_type") }}</th>
-              <th class="text-center text-white" style="width: 15%">{{ t("col_staff") }}</th>
-              <th class="text-center text-white" style="width: 12%">{{ t("col_status") }}</th>
-              <th class="text-center text-white" style="width: 11%">{{ t("col_note") }}</th> <!-- เพิ่ม -->
+              <th class="text-center text-white" style="width: 10%">{{ t('status.title_date') }}</th>
+              <th class="text-center text-white" style="width: 12%">{{ t('status.title_time') }}</th>
+              <th class="text-center text-white" style="width: 18%">{{ t('status.title_location') }}</th>
+              <th class="text-center text-white" style="width: 22%">{{ t('status.title_type') }}</th>
+              <th class="text-center text-white" style="width: 15%">{{ t('status.title_staff') }}</th>
+              <th class="text-center text-white" style="width: 12%">{{ t('status.title_status') }}</th>
+              <th class="text-center text-white" style="width: 11%">{{ t('status.title_note') }}</th>
             </tr>
           </thead>
 
@@ -19,40 +20,39 @@
             <tr v-for="(item, index) in paginatedBookings" :key="item.appointment_ID">
               <td class="text-start">{{ item.date }}</td>
               <td class="text-start">{{ item.time }}</td>
-              <td class="text-start">{{ item.place_name }}</td>
-              <td class="text-start">{{ item.type }}</td>
-              <td class="text-start">{{ item.staff || "-" }}</td>
+
+              <!-- ✅ แปลสถานที่ตามภาษา -->
+              <td class="text-start">{{ placeLabel(item.place_name) }}</td>
+
+              <!-- ✅ แปลประเภทบริการตามภาษา -->
+              <td class="text-start">{{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}</td>
+
+              <td class="text-start">{{ item.staff || '-' }}</td>
               <td>
                 <div class="d-flex align-center justify-center ga-2">
                   <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black" @click="openCancelDialog(index)">
                     <v-icon start small>mdi-timer-sand</v-icon>
-                    {{ t("status_pending") }}
+                    {{ t('status.pending') }}
                   </v-chip>
                   <v-chip v-else-if="item.status === 'approved'" color="green" text-color="white">
                     <v-icon start small>mdi-check-circle</v-icon>
-                    {{ t("status_approved") }}
+                    {{ t('status.approved') }}
                   </v-chip>
                   <v-chip v-else-if="item.status === 'rejected'" color="red" text-color="white">
                     <v-icon start small>mdi-close-circle</v-icon>
-                    {{ t("status_rejected") }}
+                    {{ t('status.rejected') }}
                   </v-chip>
                   <v-chip v-else-if="item.status === 'cancelled'" color="grey" text-color="white">
                     <v-icon start small>mdi-cancel</v-icon>
-                    {{ t("status_cancelled") }}
+                    {{ t('status.cancelled') }}
                   </v-chip>
                   <v-chip v-else-if="item.status === 'completed'" color="blue" text-color="white">
                     <v-icon start small>mdi-check-decagram</v-icon>
-                    {{ t("status_completed") }}
+                    {{ t('status.completed') }}
                   </v-chip>
-
-                  <!-- ปุ่มยกเลิก เฉพาะ pending -->
-                  <!-- <v-btn v-if="item.status === 'pending'" icon size="small" color="red" @click="openCancelDialog(index)">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn> -->
                 </div>
-              </td> 
+              </td>
 
-              <!-- คอลัมน์หมายเหตุ -->
               <td class="text-start">
                 <span v-if="item.status === 'rejected' && item.note" :title="item.note">
                   {{ item.note }}
@@ -77,14 +77,14 @@
         <v-dialog v-model="cancelDialog" max-width="520" persistent>
           <v-card class="pa-6 text-center" elevation="8">
             <div class="text-h5 font-weight-bold mb-2">
-              {{ props.lang === 'th' ? 'คุณต้องการยกเลิกการจองหรือไม่?' : 'Are you sure?' }}
+              {{ t('status.cancel_confirm_title') }}
             </div>
             <div class="d-flex justify-center ga-3 mt-4">
               <v-btn color="error" variant="flat" @click="cancelDialog = false">
-                {{ props.lang === 'th' ? 'ยกเลิก' : 'Cancel' }}
+                {{ t('status.btn_cancel') }}
               </v-btn>
               <v-btn color="primary" variant="flat" @click="confirmCancel">
-                {{ props.lang === 'th' ? 'ยืนยัน' : 'Confirm' }}
+                {{ t('status.btn_confirm') }}
               </v-btn>
             </div>
           </v-card>
@@ -95,136 +95,134 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import axios from "axios";
+import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import axios from 'axios'
 
-// props
 const props = defineProps({
   lang: String,
-  email: String,
-});
+  email: String
+})
 
-const page = ref(1);
-const cancelDialog = ref(false);
-const selectedIndex = ref(null);
-const bookings = ref([]);
+// i18n: sync locale จาก props.lang
+const { t, locale } = useI18n()
+watch(
+  () => props.lang,
+  (l) => {
+    if (l === 'th' || l === 'en') locale.value = l
+  },
+  { immediate: true }
+)
 
-// ดึงข้อมูลการจอง (ดึง reject_reason มาด้วย)
+const page = ref(1)
+const cancelDialog = ref(false)
+const selectedIndex = ref(null)
+const bookings = ref([])
+
+// ดึงข้อมูลการจอง
 const fetchBookings = async () => {
   try {
-    const response = await axios.get("/api/appointments/status", {
-      params: { email: props.email },
-    });
+    const response = await axios.get('/api/appointments/status', {
+      params: { email: props.email }
+    })
     bookings.value = response.data.map((item) => {
-      let formattedDate = "-";
+      let formattedDate = '-'
       if (item.date) {
-        const d = new Date(item.date);
-        const day = String(d.getDate()).padStart(2, "0");
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const year = d.getFullYear();
-        formattedDate = `${day}/${month}/${year}`;
+        const d = new Date(item.date)
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const year = d.getFullYear()
+        formattedDate = `${day}/${month}/${year}`
       }
-
       return {
         ...item,
         date: formattedDate,
-        staff: item.first_name ? `${item.first_name} ${item.last_name}` : "-",
-        type: item.service_ID === 4 && item.other_type ? item.other_type : (item.service_type || "-"),
-        place_name: item.place_name || "-",
-        status: item.status || "pending",
-        appointment_ID: item.appointment_ID || "",
-        note: item.reject_reason || "", // <<< เพิ่ม map เป็น note
-      };
-    });
+        staff: item.first_name ? `${item.first_name} ${item.last_name}` : '-',
+        type: item.service_ID === 4 && item.other_type ? item.other_type : (item.service_type || '-'),
+        place_name: item.place_name || '-',
+        status: item.status || 'pending',
+        appointment_ID: item.appointment_ID || '',
+        note: item.reject_reason || ''
+      }
+    })
   } catch (error) {
-    console.error("Error fetching bookings:", error);
+    console.error('Error fetching bookings:', error)
   }
-};
+}
+onMounted(fetchBookings)
 
-onMounted(fetchBookings);
+// ✅ ฟังก์ชันแปล "สถานที่" ตามภาษา (ใช้คีย์ในไฟล์ appointment.*)
+function placeLabel(name) {
+  const map = new Map([
+    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
+    ['ออนไลน์', 'appointment.online'],
+    ['M4U (ตึก M-square)', 'appointment.msquare'],
+    // รองรับกรณีฝั่ง EN ส่งมา
+    ['Building C1 Room 112', 'appointment.on_site'],
+    ['Online', 'appointment.online'],
+    ['M4U (M-square building)', 'appointment.msquare']
+  ])
+  const key = map.get(name)
+  return key ? t(key) : name
+}
 
-// เปิด dialog และ map index ให้ตรงกับอาร์เรย์จริง (รองรับเพจิเนชัน)
+// ✅ ฟังก์ชันแปล "ประเภทบริการ" ตามภาษา (ใช้รหัสก่อน, ถ้าไม่มีเดาจากข้อความ)
+function serviceLabel(serviceId, serviceType, otherType) {
+  if (serviceId === 1) return t('appointment.life')
+  if (serviceId === 2) return t('appointment.study')
+  if (serviceId === 3) return t('appointment.emotion')
+  if (serviceId === 4) return otherType || t('appointment.other')
+
+  const norm = (serviceType || '').toLowerCase()
+  if (!norm) return '-'
+  if (/(ชีวิต|ปรับตัว|life|adjustment)/.test(norm)) return t('appointment.life')
+  if (/(เรียน|academic|study)/.test(norm)) return t('appointment.study')
+  if (/(สุขภาพจิต|emotion|mental)/.test(norm)) return t('appointment.emotion')
+  if (/(other|อื่น)/.test(norm)) return otherType || t('appointment.other')
+  return serviceType
+}
+
+// เปิด dialog (รองรับเพจิเนชัน)
 const openCancelDialog = (pageIndex) => {
-  selectedIndex.value = (page.value - 1) * 7 + pageIndex;
-  cancelDialog.value = true;
-};
+  selectedIndex.value = (page.value - 1) * 7 + pageIndex
+  cancelDialog.value = true
+}
 
-// ยกเลิกโดยไม่ต้องกรอกเหตุผล (ไม่ส่ง reason)
+// ยกเลิกโดยไม่ต้องกรอกเหตุผล
 const confirmCancel = async () => {
   if (selectedIndex.value == null || !bookings.value[selectedIndex.value]) {
-    alert(props.lang === 'th' ? "ไม่พบรายการที่ต้องการยกเลิก" : "Booking not found");
-    return;
+    alert(t('status.err_not_found'))
+    return
   }
-  const item = bookings.value[selectedIndex.value];
+  const item = bookings.value[selectedIndex.value]
   if (!item.appointment_ID) {
-    alert(props.lang === 'th' ? "ไม่พบ ID ของการจองนี้" : "Appointment ID not found");
-    return;
+    alert(t('status.err_no_id'))
+    return
   }
 
   try {
-    const res = await axios.put(`/api/appointments/${item.appointment_ID}/cancel`);
-    const okMsg = ["Appointment cancelled and reason saved", "Appointment cancelled"];
+    const res = await axios.put(`/api/appointments/${item.appointment_ID}/cancel`)
+    const okMsg = ['Appointment cancelled and reason saved', 'Appointment cancelled']
     if (okMsg.includes(res?.data?.message)) {
-      bookings.value[selectedIndex.value].status = "cancelled";
-      cancelDialog.value = false;
-      alert(props.lang === 'th' ? "ยกเลิกการจองเรียบร้อยแล้ว" : "Appointment cancelled");
+      bookings.value[selectedIndex.value].status = 'cancelled'
+      cancelDialog.value = false
+      alert(t('status.msg_cancelled'))
     } else {
-      alert(props.lang === 'th' ? "เกิดข้อผิดพลาดในการยกเลิกการจอง" : "Cancellation failed");
+      alert(t('status.err_cancel_failed'))
     }
   } catch (e) {
-    console.error("cancel error:", e);
-    alert(props.lang === 'th' ? "เกิดข้อผิดพลาดในการยกเลิกการจอง" : "Cancellation error");
+    console.error('cancel error:', e)
+    alert(t('status.err_cancel_error'))
   }
-};
-
-// แปลภาษา
-const translations = {
-  th: {
-    logout: "ออกจากระบบ",
-    menu_booking: "จองเข้ารับบริการ",
-    menu_status: "สถานะการจอง",
-    title: "สถานะการจอง",
-    col_date: "วันที่นัด",
-    col_time: "เวลาที่จอง",
-    col_location: "สถานที่",
-    col_type: "ประเภท",
-    col_staff: "ผู้ดูแล",
-    col_status: "สถานะ",
-    col_note: "หมายเหตุ", // <<< เพิ่ม
-    status_pending: "รอดำเนินการ",
-    status_approved: "อนุมัติ",
-    status_rejected: "ปฏิเสธ",
-    status_cancelled: "ยกเลิกการจอง",
-    status_completed: "เสร็จสิ้น",
-  },
-  en: {
-    logout: "Logout",
-    menu_booking: "Book Appointment",
-    menu_status: "Booking Status",
-    title: "Booking Status",
-    col_date: "Date",
-    col_time: "Time",
-    col_location: "Location",
-    col_type: "Type",
-    col_staff: "Staff",
-    col_status: "Status",
-    col_note: "Note", // <<< เพิ่ม
-    status_pending: "Pending",
-    status_approved: "Approved",
-    status_rejected: "Rejected",
-    status_cancelled: "Cancelled",
-    status_completed: "Completed",
-  },
-};
-const t = (key) => computed(() => translations[props.lang][key]).value;
+}
 
 // เพจิเนชัน
-const filteredBookings = computed(() => bookings.value);
+const filteredBookings = computed(() => bookings.value)
 const paginatedBookings = computed(() => {
-  const start = (page.value - 1) * 7;
-  return filteredBookings.value.slice(start, start + 7);
-});
-const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 7));
+  const start = (page.value - 1) * 7
+  return filteredBookings.value.slice(start, start + 7)
+})
+const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 7))
 </script>
 
 <style scoped>

@@ -1,11 +1,13 @@
+
 <template>
   <v-app>
     <v-main>
       <v-container>
 
+        <!-- หัวข้อ -->
         <v-row class="mb-4" justify="center">
           <v-col cols="auto" class="text-center">
-            <h2 class="text-h5 font-weight-bold mb-0">รายการคำขอเข้ารับคำปรึกษา</h2>
+            <h2 class="text-h5 font-weight-bold mb-0">{{ t('adminReq.title') }}</h2>
           </v-col>
         </v-row>
 
@@ -13,14 +15,14 @@
         <v-table style="table-layout: fixed;">
           <thead style="background-color: #009199; color: white;">
             <tr>
-              <th class="text-center" style="width: 8%;">วันที่</th>
-              <th class="text-center" style="width: 14%;">เวลา</th>
-              <th class="text-center" style="width: 10%;">สถานที่</th>
-              <th class="text-center" style="width: 18%;">ประเภท</th>
-              <th class="text-center" style="width: 26%;">ผู้จอง</th>
-              <th class="text-center" style="width: 15%;">อีเมล</th>
-              <th class="text-center" style="width: 10%;">เบอร์โทร</th>
-              <th class="text-center" style="width: 12%;">สถานะ</th>
+              <th class="text-center" style="width: 8%;">{{ t('adminReq.col_date') }}</th>
+              <th class="text-center" style="width: 14%;">{{ t('adminReq.col_time') }}</th>
+              <th class="text-center" style="width: 10%;">{{ t('adminReq.col_location') }}</th>
+              <th class="text-center" style="width: 18%;">{{ t('adminReq.col_type') }}</th>
+              <th class="text-center" style="width: 26%;">{{ t('adminReq.col_booker') }}</th>
+              <th class="text-center" style="width: 15%;">{{ t('adminReq.col_email') }}</th>
+              <th class="text-center" style="width: 10%;">{{ t('adminReq.col_phone') }}</th>
+              <th class="text-center" style="width: 12%;">{{ t('adminReq.col_status') }}</th>
             </tr>
           </thead>
 
@@ -28,93 +30,114 @@
             <tr v-for="item in paginatedBookings" :key="item.appointment_ID">
               <td>{{ formatDate(item.date) }}</td>
               <td>{{ item.time }}</td>
-              <td>{{ item.place_name }}</td>
+              <td>{{ placeLabel(item.place_name) }}</td>
               <td>
-                <div style="padding: 8px 12px;">{{ item.service_ID == 4 && item.other_type ? item.other_type :
-                  item.service_type || 'ไม่ระบุ' }} </div>
+                <div style="padding: 8px 12px;">
+                  {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}
+                </div>
               </td>
               <td>{{ item.full_name || '-' }}</td>
               <td>{{ item.user_email }}</td>
               <td>{{ item.phone_number }}</td>
               <td class="text-center">
-                <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black"
-                  @click="openAssignDialog(item)">
+                <v-chip
+                  v-if="item.status === 'pending'"
+                  color="#FF6F00" text-color="black"
+                  @click="openAssignDialog(item)"
+                >
                   <v-icon start small>mdi-timer-sand</v-icon>
-                  รอดำเนินการ
+                  {{ t('status.pending') }}
+                </v-chip>
+                <v-chip v-else-if="item.status === 'approved'" color="green" text-color="white">
+                  <v-icon start small>mdi-check-circle</v-icon>
+                  {{ t('status.approved') }}
+                </v-chip>
+                <v-chip v-else-if="item.status === 'rejected'" color="red" text-color="white">
+                  <v-icon start small>mdi-close-circle</v-icon>
+                  {{ t('status.rejected') }}
+                </v-chip>
+                <v-chip v-else-if="item.status === 'cancelled'" color="grey" text-color="white">
+                  <v-icon start small>mdi-cancel</v-icon>
+                  {{ t('status.cancelled') }}
+                </v-chip>
+                <v-chip v-else-if="item.status === 'completed'" color="blue" text-color="white">
+                  <v-icon start small>mdi-check-decagram</v-icon>
+                  {{ t('status.completed') }}
                 </v-chip>
               </td>
             </tr>
           </tbody>
         </v-table>
-        <v-pagination v-model="page" :length="pageCount" :total-visible="5" next-icon="mdi-chevron-right"
-          prev-icon="mdi-chevron-left" class="mt-6 d-flex justify-center" />
 
-        <!-- dialog -->
+        <v-pagination
+          v-model="page"
+          :length="pageCount"
+          :total-visible="5"
+          next-icon="mdi-chevron-right"
+          prev-icon="mdi-chevron-left"
+          class="mt-6 d-flex justify-center"
+        />
+
+        <!-- Dialog รายละเอียด/อนุมัติ/ปฏิเสธ -->
         <v-dialog v-model="showDialog" max-width="600px">
           <v-card class="pa-6 dialog-card" style="border-radius:12px; position:relative;">
-
-            <!-- ปุ่มปิด (ลอยนอก title bar) -->
             <v-btn icon size="small" variant="text" class="close-btn" @click="showDialog = false">
               <v-icon size="22">mdi-close</v-icon>
             </v-btn>
 
-            <!-- หัวข้อ -->
             <v-card-title class="text-h6 font-weight-bold pa-3 mb-4"
               style="background-color:#009199; color:#fff; border-radius:8px;">
-              ข้อมูลผู้รับบริการ
+              {{ t('adminReq.dialog_title') }}
             </v-card-title>
 
-            <!-- เนื้อหา -->
             <v-card-text v-if="selectedAppointment" class="pa-0">
-              <!-- กลุ่ม 1: ข้อมูลส่วนตัว -->
               <div class="mb-4 pa-3" style="line-height: 1.6; background-color: #f5f5f5; border-radius: 6px;">
-                <p><strong>ชื่อ:</strong> {{ selectedAppointment.full_name || '-' }}</p>
-                <p><strong>อีเมล:</strong> {{ selectedAppointment.user_email }}</p>
-                <p><strong>เบอร์โทร:</strong> {{ selectedAppointment.phone_number }}</p>
+                <p><strong>{{ t('adminReq.f_name') }}:</strong> {{ selectedAppointment.full_name || '-' }}</p>
+                <p><strong>{{ t('adminReq.f_email') }}:</strong> {{ selectedAppointment.user_email }}</p>
+                <p><strong>{{ t('adminReq.f_phone') }}:</strong> {{ selectedAppointment.phone_number }}</p>
               </div>
 
-              <!-- กลุ่ม 2: รายละเอียดการนัด -->
               <div class="pa-3" style="line-height: 1.6; background-color: #fafafa; border-radius: 6px;">
-                <p><strong>วันที่นัด:</strong> {{ formatDate(selectedAppointment.date) }}</p>
-                <p><strong>เวลา:</strong> {{ selectedAppointment.time }}</p>
-                <p>
-                  <strong>ประเภทการบริการ:</strong>
-                  {{ selectedAppointment.service_ID == 4 && selectedAppointment.other_type
-                    ? selectedAppointment.other_type
-                    : selectedAppointment.service_type || 'ไม่ระบุ' }}
+                <p><strong>{{ t('adminReq.f_date') }}:</strong> {{ formatDate(selectedAppointment.date) }}</p>
+                <p><strong>{{ t('adminReq.f_time') }}:</strong> {{ selectedAppointment.time }}</p>
+                <p><strong>{{ t('adminReq.f_type') }}:</strong>
+                  {{ serviceLabel(selectedAppointment.service_ID, selectedAppointment.service_type, selectedAppointment.other_type) }}
                 </p>
-                <p><strong>สถานที่:</strong> {{ selectedAppointment.place_name }}</p>
+                <p><strong>{{ t('adminReq.f_place') }}:</strong> {{ placeLabel(selectedAppointment.place_name) }}</p>
               </div>
             </v-card-text>
 
-            <!-- ปุ่ม -->
             <v-card-actions class="justify-end mt-6 pa-0">
               <v-btn color="green" variant="flat" class="text-white" @click="confirmAssign">
-                อนุมัติ
+                {{ t('adminReq.btn_approve') }}
               </v-btn>
               <v-btn color="red" variant="flat" class="text-white" @click="openRejectDialog">
-                ปฏิเสธ
+                {{ t('adminReq.btn_reject') }}
               </v-btn>
-
             </v-card-actions>
           </v-card>
         </v-dialog>
-        <!-- Dialog ย่อย: กรอกเหตุผลการปฏิเสธ -->
+
+        <!-- Dialog กรอกเหตุผลการปฏิเสธ -->
         <v-dialog v-model="showRejectDialog" max-width="520px" persistent>
           <v-card class="pa-6" style="border-radius: 12px;">
             <v-card-title class="text-h6 font-weight-bold pa-0 mb-4">
-              ระบุเหตุผลการปฏิเสธ
+              {{ t('adminReq.reject_title') }}
             </v-card-title>
 
             <v-card-text class="pa-0">
-              <v-textarea v-model="rejectReason" label="เหตุผล (ต้องกรอก)" auto-grow variant="outlined" rows="3"
-                counter="500" :rules="[v => !!v && v.trim().length > 0 || 'โปรดระบุเหตุผล']" />
+              <v-textarea
+                v-model="rejectReason"
+                :label="t('adminReq.reject_reason_label')"
+                auto-grow variant="outlined" rows="3" counter="500"
+                :rules="[v => !!v && v.trim().length > 0 || t('adminReq.reject_reason_rule')]"
+              />
             </v-card-text>
 
             <v-card-actions class="justify-end mt-4 pa-0">
-              <v-btn variant="text" @click="closeRejectDialog">ยกเลิก</v-btn>
+              <v-btn variant="text" @click="closeRejectDialog">{{ t('adminReq.btn_cancel') }}</v-btn>
               <v-btn color="red" variant="flat" class="text-white" @click="submitReject">
-                ยืนยันปฏิเสธ
+                {{ t('adminReq.btn_confirm_reject') }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -127,126 +150,126 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 
-const page = ref(1)
+const { t, locale } = useI18n() // ใช้ locale ปัจจุบันจากระบบ i18n ทั่วทั้งแอป
 
-const router = useRouter()
+const page = ref(1)
 const appointments = ref([])
 const showDialog = ref(false)
 const selectedAppointment = ref(null)
 const showRejectDialog = ref(false)
 const rejectReason = ref('')
 
-
-// เปิด Dialog
+// เปิด Dialog รายการ
 const openAssignDialog = (appointment) => {
   selectedAppointment.value = appointment
   showDialog.value = true
 }
-// เปิด/ปิด Dialog เหตุผลการปฏิเสธ
 const openRejectDialog = () => {
   rejectReason.value = ''
   showRejectDialog.value = true
 }
-
-const closeRejectDialog = () => {
-  showRejectDialog.value = false
-}
+const closeRejectDialog = () => { showRejectDialog.value = false }
 
 // รับเคส
 const confirmAssign = async () => {
   try {
     const staff_ID = localStorage.getItem('staff_ID')
-    console.log("📤 staff_ID ที่จะส่ง:", staff_ID)
     await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/assign`, {
-      staff_ID,
+      staff_ID
     })
-
-    alert('รับเคสสำเร็จ')
-
+    alert(t('adminReq.msg_assigned'))
     showDialog.value = false
-    fetchAppointments() // โหลดรายการใหม่
+    fetchAppointments()
   } catch (err) {
-    alert('เกิดข้อผิดพลาดในการรับเคส')
+    alert(t('adminReq.err_assign'))
   }
 }
 
-// ส่งปฏิเสธ + เหตุผล
+// ปฏิเสธเคส + เหตุผล
 const submitReject = async () => {
   try {
     const reason = (rejectReason.value || '').trim()
-    if (!reason) return alert('โปรดระบุเหตุผลการปฏิเสธ')
-
+    if (!reason) return alert(t('adminReq.reject_reason_rule'))
     const staff_ID = localStorage.getItem('staff_ID')
     await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/reject`, {
       staff_ID,
-      reason,               // <-- เผื่อ backend อ่านชื่อนี้
-      reject_reason: reason // <-- และชื่อนี้ด้วย
+      reason,
+      reject_reason: reason
     })
-
-    alert('ปฏิเสธเคสสำเร็จ')
+    alert(t('adminReq.msg_rejected'))
     showRejectDialog.value = false
     showDialog.value = false
     await fetchAppointments()
   } catch (err) {
-    console.error(err)
-    alert('เกิดข้อผิดพลาดในการปฏิเสธเคส')
+    alert(t('adminReq.err_reject'))
   }
 }
 
-
-
-// แปลงวันที่
+// วันที่ตาม locale ปัจจุบัน
 const formatDate = (dateString) => {
-  if (!dateString) return "-"
-  return new Date(dateString).toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" })
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString(
+    locale.value === 'th' ? 'th-TH' : 'en-US',
+    { day: '2-digit', month: '2-digit', year: 'numeric' }
+  )
 }
 
 // โหลดข้อมูล
 const fetchAppointments = async () => {
-  const res = await axios.get("http://localhost:3000/api/appointments")
-  console.log("appointments =", res.data)
+  const res = await axios.get('http://localhost:3000/api/appointments')
   appointments.value = res.data
 }
 
-// แสดงเฉพาะหน้าปัจจุบัน
+// เพจิเนชัน
 const filteredBookings = computed(() => appointments.value)
-
 const paginatedBookings = computed(() => {
   const start = (page.value - 1) * 5
   return filteredBookings.value.slice(start, start + 5)
 })
-
-const pageCount = computed(() =>
-  Math.ceil(filteredBookings.value.length / 5)
-)
+const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 5))
 
 onMounted(fetchAppointments)
+
+/** ===== แปลสถานที่ & ประเภทบริการ ===== */
+
+// สถานที่: map ชื่อจาก backend -> คีย์ i18n แล้วคืน label ตามภาษา
+function placeLabel(name) {
+  const map = new Map([
+    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
+    ['ออนไลน์', 'appointment.online'],
+    ['M4U (ตึก M-square)', 'appointment.msquare'],
+    // รองรับเคสฝั่งอังกฤษ
+    ['Building C1 Room 112', 'appointment.on_site'],
+    ['Online', 'appointment.online'],
+    ['M4U (M-square building)', 'appointment.msquare']
+  ])
+  const key = map.get(name)
+  return key ? t(key) : name
+}
+
+// ประเภทบริการ: ใช้รหัสก่อน ถ้าไม่มีลองเดาจากข้อความ
+function serviceLabel(serviceId, serviceType, otherType) {
+  if (serviceId === 1) return t('appointment.life')
+  if (serviceId === 2) return t('appointment.study')
+  if (serviceId === 3) return t('appointment.emotion')
+  if (serviceId === 4) return otherType || t('appointment.other')
+
+  const norm = (serviceType || '').toLowerCase()
+  if (!norm) return t('adminReq.unspecified')
+  if (/(ชีวิต|ปรับตัว|life|adjustment)/.test(norm)) return t('appointment.life')
+  if (/(เรียน|academic|study)/.test(norm)) return t('appointment.study')
+  if (/(สุขภาพจิต|emotion|mental)/.test(norm)) return t('appointment.emotion')
+  if (/(other|อื่น)/.test(norm)) return otherType || t('appointment.other')
+  return serviceType || t('adminReq.unspecified')
+}
 </script>
 
 <style scoped>
-h2 {
-  font-weight: bold;
-  color: #009199;
-}
-
-.dialog-card {
-  /* เผื่อพื้นที่ด้านบนสำหรับปุ่มปิด */
-  padding-top: 56px !important;
-}
-
-.close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  color: #666;
-}
-
-@media (max-width: 600px) {
-  .dialog-card {
-    padding-top: 48px !important;
-  }
-}
+h2 { font-weight: bold; color: #009199; }
+.dialog-card { padding-top: 56px !important; }
+.close-btn { position: absolute; top: 12px; right: 12px; color: #666; }
+@media (max-width: 600px) { .dialog-card { padding-top: 48px !important; } }
 </style>

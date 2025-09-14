@@ -1,214 +1,261 @@
+<!-- src/views/appointment.vue -->
 <template>
   <v-app>
     <v-main>
       <v-container max-width="600px">
         <h2 class="text-h5 text-center mb-6 font-weight-bold">
-          {{ t("title") }}
+          {{ t('appointment.title') }}
         </h2>
 
-        <!-- ชื่อ-นามสกุล -->
-        <v-text-field v-model="form.fullName" :label="t('full_name')" variant="outlined" density="comfortable"
-          required />
+        <v-form ref="formRef" @submit.prevent="submitForm">
+          <!-- ชื่อ-นามสกุล -->
+          <v-text-field v-model="form.fullName" :rules="[v => !!v]" variant="outlined" density="comfortable">
+            <template #label>
+              <span style="color:black">{{ t('appointment.full_name') }}</span>
+              <span style="color:red"> *</span>
+            </template>
+          </v-text-field>
 
-        <!-- วันที่: ล็อกเฉพาะวันย้อนหลัง -->
-        <v-text-field v-model="form.date" :label="t('date')" type="date" :min="today" variant="outlined"
-          density="comfortable" required />
+          <!-- วันที่ -->
+          <v-text-field
+            v-model="form.date"
+            type="date"
+            :min="today"
+            :rules="[v => !!v]"
+            variant="outlined"
+            density="comfortable"
+          >
+            <template #label>
+              <span style="color:black">{{ t('appointment.date') }}</span>
+              <span style="color:red"> *</span>
+            </template>
+          </v-text-field>
 
-        <v-select v-model="form.time" :label="t('time')" :items="timeOptions" item-title="label" item-value="value"
-          variant="outlined" density="comfortable" required />
+          <!-- เวลา -->
+          <v-select
+            v-model="form.time"
+            :items="timeOptions"
+            item-title="label"
+            item-value="value"
+            :rules="[v => !!v]"
+            variant="outlined"
+            density="comfortable"
+          >
+            <template #label>
+              <span style="color:black">{{ t('appointment.time') }}</span>
+              <span style="color:red"> *</span>
+            </template>
+          </v-select>
 
-        <v-radio-group v-model="form.nationality" :label="t('nationality')" class="mt-4">
-          <v-radio :label="t('thai')" value="ไทย" />
-          <v-radio :label="t('foreign')" value="ต่างชาติ" />
-        </v-radio-group>
+          <!-- สัญชาติ -->
+          <v-radio-group v-model="form.nationality" :rules="[v => !!v]" class="mt-4">
+            <template #label>
+              <span style="color:black">{{ t('appointment.nationality') }}</span>
+              <span style="color:red; margin-left:4px">*</span>
+            </template>
+            <v-radio :label="t('appointment.thai')" value="ไทย" />
+            <v-radio :label="t('appointment.foreign')" value="ต่างชาติ" />
+          </v-radio-group>
 
-        <v-radio-group v-model="form.channel" :label="t('channel')" class="mt-4">
-          <v-radio v-for="option in channelOptions" :key="option" :label="option" :value="option" />
-        </v-radio-group>
+          <!-- ช่องทาง/สถานที่ -->
+          <v-radio-group v-model="form.channel" :rules="[v => !!v]" class="mt-4">
+            <template #label>
+              <span style="color:black">{{ t('appointment.channel') }}</span>
+              <span style="color:red; margin-left:4px">*</span>
+            </template>
+            <v-radio
+              v-for="opt in channelOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </v-radio-group>
 
-        <v-text-field v-model="form.phone" :label="t('phone')" type="tel" variant="outlined" density="comfortable"
-          required />
+          <!-- โทรศัพท์ -->
+          <v-text-field
+            v-model="form.phone"
+            type="tel"
+            :rules="[v => !!v, v => phoneOk(v)]"
+            variant="outlined"
+            density="comfortable"
+          >
+            <template #label>
+              <span style="color:black">{{ t('appointment.phone') }}</span>
+              <span style="color:red"> *</span>
+            </template>
+          </v-text-field>
 
-        <v-radio-group v-model="form.serviceType" :label="t('service_type')" class="mt-4">
-          <v-radio :label="t('life')" value="life" />
-          <v-radio :label="t('study')" value="study" />
-          <v-radio :label="t('emotion')" value="emotion" />
-          <v-radio :label="t('other')" value="other" />
-        </v-radio-group>
+          <!-- ประเภทบริการ -->
+          <v-radio-group v-model="form.serviceType" :rules="[v => !!v]" class="mt-4">
+            <template #label>
+              <span style="color:black">{{ t('appointment.service_type') }}</span>
+              <span style="color:red; margin-left:4px">*</span>
+            </template>
+            <v-radio :label="t('appointment.life')" value="life" />
+            <v-radio :label="t('appointment.study')" value="study" />
+            <v-radio :label="t('appointment.emotion')" value="emotion" />
+            <v-radio :label="t('appointment.other')" value="other" />
+          </v-radio-group>
 
-        <v-text-field v-if="form.serviceType === 'other'" v-model="form.otherService" :label="t('specify')"
-          variant="outlined" density="comfortable" />
+          <!-- อื่น ๆ -->
+          <v-text-field
+            v-if="form.serviceType === 'other'"
+            v-model="form.otherService"
+            :rules="[v => (form.serviceType !== 'other' || !!v)]"
+            variant="outlined"
+            density="comfortable"
+          >
+            <template #label>
+              <span style="color:black">{{ t('appointment.specify') }}</span>
+              <span style="color:red"> *</span>
+            </template>
+          </v-text-field>
 
-        <!-- ข้อความความเป็นส่วนตัว -->
-        <p class="text-body-2 mb-6" style="color: #009199;">
-          หมายเหตุ : ข้อมูลของท่านจะถูกเก็บเป็นความลับ และใช้เพื่อการนัดหมายเท่านั้น
-        </p>
+          <!-- หมายเหตุความเป็นส่วนตัว -->
+          <p class="text-body-2 mb-6" style="color:#009199">
+            {{ t('appointment.privacy_note') }}
+          </p>
 
-        <v-btn class="mt-6" color="#009199" variant="flat" size="large" block @click="submitForm">
-          {{ t("submit") }}
-        </v-btn>
+          <v-btn class="mt-6" color="#009199" variant="flat" size="large" block type="submit">
+            {{ t('appointment.submit') }}
+          </v-btn>
+        </v-form>
       </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import { ref, computed, defineProps, watch, onMounted } from "vue";
-import axios from "axios";
-import dayjs from "dayjs";
+import { ref, computed, defineProps, watch, onMounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+import axios from 'axios'
+import dayjs from 'dayjs'
 
-// props และ translations
-const props = defineProps({ lang: { type: String, default: "th" } });
-const lang = computed(() => (["th", "en"].includes(props.lang) ? props.lang : "th"));
+/** sync locale จากพาเรนต์ */
+const props = defineProps({ lang: { type: String, default: 'th' } })
+const { t, locale } = useI18n()
+watch(
+  () => props.lang,
+  l => { if (l === 'th' || l === 'en') locale.value = l },
+  { immediate: true }
+)
 
-const translations = {
-  th: {
-    title: "จองคิวเข้ารับการปรึกษา",
-    full_name: "ชื่อ-นามสกุล*",
-    date: "วันที่ สะดวกในการรับบริการ*",
-    time: "เวลาสะดวกในการรับบริการ*",
-    nationality: "สัญชาติ*",
-    thai: "นักศึกษาไทย",
-    foreign: "นักศึกษาต่างชาติ",
-    channel: "ช่องทางการรับบริการ*",
-    on_site: "อาคาร C1 ห้อง 112",
-    online: "ออนไลน์",
-    msquare: "M4U (ตึก M-square)",
-    phone: "หมายเลขโทรศัพท์*",
-    service_type: "ประเภทการบริการ*",
-    life: "ขอรับการปรึกษาด้านการใช้ชีวิต และการปรับตัว",
-    study: "ขอรับการปรึกษาด้านการเรียน",
-    emotion: "ขอรับการปรึกษาด้านสุขภาพจิต",
-    other: "อื่น ๆ",
-    specify: "กรุณาพิมพ์ตัวเลือกอื่นที่นี่",
-    submit: "ยืนยัน",
-  },
-  en: {
-    title: "Booking Counseling Appointment",
-    full_name: "Full Name*",
-    date: "Preferred Date*",
-    time: "Preferred Time*",
-    nationality: "Nationality*",
-    thai: "Thai Student",
-    foreign: "International Student",
-    channel: "Service Channel*",
-    on_site: "Building C1 Room 112",
-    online: "Online",
-    msquare: "M4U (M-square building)",
-    phone: "Phone Number*",
-    service_type: "Service Type*",
-    life: "Request for life and mental health consultation",
-    study: "Request for academic consultation",
-    emotion: "Vent your feelings",
-    other: "Other",
-    specify: "Please specify other",
-    submit: "Submit",
-  },
-};
+/** validation helpers */
+const phoneOk = (v) => /^0\d{8,9}$/.test(String(v || '').replace(/\s|-/g, ''))
+const formRef = ref(null)
 
-const t = (key) => computed(() => translations[lang.value]?.[key] ?? `[${key}]`).value;
-
-// ฟอร์มข้อมูล
+/** form state */
 const form = ref({
-  fullName: "",
-  date: "",
-  time: "",
-  nationality: "ไทย",
-  channel: "",
-  phone: "",
-  serviceType: "",
-  otherService: "",
-});
+  fullName: '',
+  date: '',
+  time: '',
+  nationality: 'ไทย',
+  channel: '',
+  phone: '',
+  serviceType: '',
+  otherService: ''
+})
 
-// แสดงเฉพาะการใช้งานปัจจุบัน
-const occupiedTimes = ref([]); // ยังโหลดได้ แต่จะไม่เอาไปปิดเวลาแล้ว
-const allPlaces = ref([]);
+/** time options (label 2 ภาษา) */
+const rawTimeSlots = [
+  { th: '09.00 - 10.30 น.', en: '09:00 - 10:30', value: '09:00-10:30' },
+  { th: '10.30 - 12.00 น.', en: '10:30 - 12:00', value: '10:30-12:00' },
+  { th: '13.00 - 14.30 น.', en: '13:00 - 14:30', value: '13:00-14:30' },
+  { th: '14.30 - 16.00 น.', en: '14:30 - 16:00', value: '14:30-16:00' }
+]
+const timeOptions = computed(() =>
+  rawTimeSlots.map(s => ({ label: locale.value === 'th' ? s.th : s.en, value: s.value }))
+)
 
-const today = computed(() => dayjs().format("YYYY-MM-DD"));
+/** แปลชื่อสถานที่ตามคีย์ appointment.* */
+function placeLabel(rawName = '') {
+  const map = new Map([
+    // TH -> key
+    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
+    ['ออนไลน์', 'appointment.online'],
+    ['M4U (ตึก M-square)', 'appointment.msquare'],
+    // EN -> key (กรณี backend ส่ง EN)
+    ['Building C1 Room 112', 'appointment.on_site'],
+    ['Online', 'appointment.online'],
+    ['M4U (M-square building)', 'appointment.msquare']
+  ])
+  const key = map.get((rawName || '').trim())
+  return key ? t(key) : rawName
+}
 
-// ตัวเลือกเวลา (ไม่ปิดใด ๆ)
-const rawTimeOptions = [
-  { label: "09.00 - 10.30 น.", value: "09:00-10:30" },
-  { label: "10.30 - 12.00 น.", value: "10:30-12:00" },
-  { label: "13.00 - 14.30 น.", value: "13:00-14:30" },
-  { label: "14.30 - 16.00 น.", value: "14:30-16:00" },
-];
-const timeOptions = computed(() => rawTimeOptions);
-
+/** ช่องทาง/สถานที่: แสดง label ตามภาษา แต่ส่งค่าเดิมกลับ backend */
+const allPlaces = ref([])
 const channelOptions = computed(() => {
-  if (!form.value.nationality) return [];
+  if (!form.value.nationality) return []
   return allPlaces.value
     .filter(
-      (p) =>
-        p.place_status === "open" &&
-        p.target_group === (form.value.nationality === "ไทย" ? "ไทย" : "ต่างชาติ")
+      p =>
+        p.place_status === 'open' &&
+        p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
     )
-    .map((p) => p.place_name);
-});
+    .map(p => ({ label: placeLabel(p.place_name), value: p.place_name }))
+})
 
-// โหลดเวลาที่ถูกจอง (แม้จะไม่ใช้ปิดเวลาแล้ว เผื่ออนาคต)
+/** today */
+const today = computed(() => dayjs().format('YYYY-MM-DD'))
+
+/** occupied (เตรียมไว้ในอนาคต) */
+const occupiedTimes = ref([])
 const fetchOccupiedTimes = async () => {
-  if (!form.value.date || !form.value.channel) {
-    occupiedTimes.value = [];
-    return;
-  }
+  if (!form.value.date || !form.value.channel) { occupiedTimes.value = []; return }
   try {
-    const res = await axios.get("http://localhost:3000/api/appointments/occupied", {
-      params: {
-        date: form.value.date,
-        place_name: form.value.channel,
-      },
-    });
-    occupiedTimes.value = res.data || [];
-  } catch (err) {
-    console.error("โหลดเวลาที่ถูกจองล้มเหลว:", err);
-    occupiedTimes.value = [];
+    const res = await axios.get('http://localhost:3000/api/appointments/occupied', {
+      params: { date: form.value.date, place_name: form.value.channel }
+    })
+    occupiedTimes.value = res.data || []
+  } catch {
+    occupiedTimes.value = []
   }
-};
+}
 
-// โหลดรายการสถานที่
+/** places + default channel */
 const fetchPlaces = async () => {
   try {
-    const res = await axios.get("http://localhost:3000/api/places");
-    allPlaces.value = res.data || [];
-
-    // ✅ ตั้งค่า default channel ถ้ายังไม่ได้เลือก
+    const res = await axios.get('http://localhost:3000/api/places')
+    allPlaces.value = res.data || []
     if (!form.value.channel && form.value.nationality) {
       const firstOpenPlace = allPlaces.value.find(
-        (p) =>
-          p.place_status === "open" &&
-          p.target_group === (form.value.nationality === "ไทย" ? "ไทย" : "ต่างชาติ")
-      );
-      if (firstOpenPlace) {
-        form.value.channel = firstOpenPlace.place_name;
-      }
+        p =>
+          p.place_status === 'open' &&
+          p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
+      )
+      if (firstOpenPlace) form.value.channel = firstOpenPlace.place_name
     }
-  } catch (err) {
-    console.error("โหลดสถานที่ล้มเหลว:", err);
-    allPlaces.value = [];
+  } catch {
+    allPlaces.value = []
   }
-};
+}
 
-
-// อัปเดตเมื่อวันที่/สถานที่เปลี่ยน — รีเฟรชข้อมูล (ไม่ปิดเวลา)
-watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes);
-
+watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes)
 onMounted(() => {
-  fetchPlaces();
-  fetchOccupiedTimes();
-});
+  fetchPlaces()
+  fetchOccupiedTimes()
+})
 
-// ส่งข้อมูลจองไป backend
+/** scroll ไป field แรกที่ error */
+const scrollToFirstError = async () => {
+  await nextTick()
+  const firstError = document.querySelector('.v-input.v-input--error, .v-radio-group.v-input--error')
+  if (firstError) {
+    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const input = firstError.querySelector('input, select, textarea')
+    if (input) input.focus()
+  }
+}
+
+/** submit */
 const submitForm = async () => {
-  if (
-    !form.value.fullName ||
-    !form.value.date ||
-    !form.value.time ||
-    !form.value.phone ||
-    !form.value.channel
-  ) {
-    alert(lang.value === "th" ? "กรุณากรอกข้อมูลให้ครบถ้วน" : "Please fill out all required fields");
-    return;
+  const result = await formRef.value?.validate()
+  const valid = result?.valid ?? result
+  if (!valid) {
+    alert(t('appointment.required_alert'))
+    await scrollToFirstError()
+    return
   }
 
   const payload = {
@@ -218,32 +265,36 @@ const submitForm = async () => {
     phone: form.value.phone,
     serviceType: form.value.serviceType,
     otherService: form.value.otherService || null,
-    channel: form.value.channel,
+    channel: form.value.channel,       // ส่งชื่อสถานที่ดิบ
     nationality: form.value.nationality,
-    email: localStorage.getItem("email") || null,
-    name: localStorage.getItem("name") || null,
-  };
+    email: localStorage.getItem('email') || null,
+    name: localStorage.getItem('name') || null
+  }
 
   try {
-    await axios.post("http://localhost:3000/api/appointments", payload);
-    alert(lang.value === "th" ? "จองสำเร็จ!" : "Appointment booked!");
-    resetForm();
-    fetchOccupiedTimes();
+    await axios.post('http://localhost:3000/api/appointments', payload)
+    alert(t('appointment.success_alert'))
+    resetForm()
+    fetchOccupiedTimes()
+    formRef.value?.resetValidation()
   } catch (err) {
-    const msg = err.response?.data?.error || err.message || "เกิดข้อผิดพลาด";
-    alert(msg);
+    const fallback = locale.value === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred'
+    const msgErr = err.response?.data?.error || err.message || fallback
+    alert(msgErr)
   }
-};
+}
 
 const resetForm = () => {
   form.value = {
-    fullName: "",
-    date: "",
-    time: "",
-    phone: "",
-    serviceType: "",
-    otherService: "",
-  };
-  occupiedTimes.value = [];
-};
+    fullName: '',
+    date: '',
+    time: '',
+    nationality: 'ไทย',
+    channel: '',
+    phone: '',
+    serviceType: '',
+    otherService: ''
+  }
+  occupiedTimes.value = []
+}
 </script>
