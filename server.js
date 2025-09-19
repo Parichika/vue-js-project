@@ -353,7 +353,6 @@ app.get("/api/history", (req, res) => {
   let values = [];
 
   if (role === "admin") {
-
     sql = `
       SELECT 
         a.appointment_ID,
@@ -365,6 +364,7 @@ app.get("/api/history", (req, res) => {
         a.phone_number,
         a.user_email,
         a.full_name,
+        a.appointment_summary,   
         p.place_name,
         st.service_type
       FROM appointment a
@@ -385,13 +385,14 @@ app.get("/api/history", (req, res) => {
         a.phone_number,
         a.user_email,
         a.full_name,
+        a.appointment_summary,  
         p.place_name,
         st.service_type
       FROM appointment a
       LEFT JOIN place p ON a.place_ID = p.place_ID
       LEFT JOIN service_type st ON a.service_ID = st.service_ID
       WHERE a.staff_ID = ? 
-        AND a.status IN ('approved','rejected','completed')
+        AND a.status IN ('approved','rejected','completed','cancelled')
       ORDER BY a.appointment_ID DESC
     `;
     values = [staff_ID];
@@ -404,6 +405,7 @@ app.get("/api/history", (req, res) => {
     res.json(results);
   });
 });
+
 
 /* =========================
  *  ปิดเคส + บันทึกสรุปคำแนะนำ (เก็บในตาราง appointment)

@@ -114,7 +114,8 @@
     "advice_label": "Advice",
     "btn_cancel": "Cancel",
     "btn_save": "Save",
-    "unspecified": "Unspecified"
+    "unspecified": "Unspecified",
+     "col_note": "Notes"
   },
   "dashboard": {
     "title": "Counselling Request Report",

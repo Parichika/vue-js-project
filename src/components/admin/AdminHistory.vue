@@ -31,64 +31,73 @@
           <thead style="background-color:#009199; color:white;">
             <tr>
               <th class="text-center" style="width:8%;">{{ t('history.col_date') }}</th>
-              <th class="text-center" style="width:14%;">{{ t('history.col_time') }}</th>
-              <th class="text-center" style="width:16%;">{{ t('history.col_location') }}</th>
-              <th class="text-center" style="width:18%;">{{ t('history.col_type') }}</th>
-              <th class="text-center" style="width:22%;">{{ t('history.col_name') }}</th>
-              <th class="text-center" style="width:15%;">{{ t('history.col_email') }}</th>
+              <th class="text-center" style="width:12%;">{{ t('history.col_time') }}</th>
+              <th class="text-center" style="width:14%;">{{ t('history.col_location') }}</th>
+              <th class="text-center" style="width:16%;">{{ t('history.col_type') }}</th>
+              <th class="text-center" style="width:18%;">{{ t('history.col_name') }}</th>
+              <th class="text-center" style="width:14%;">{{ t('history.col_email') }}</th>
               <th class="text-center" style="width:10%;">{{ t('history.col_phone') }}</th>
-              <th class="text-center" style="width:12%;">{{ t('history.col_status') }}</th>
+              <th class="text-center" style="width:8%;">{{ t('history.col_status') }}</th>
+              <!-- ✅ หมายเหตุอยู่ช่องสุดท้าย -->
+              <th class="text-center" style="width:20%;">{{ t('history.col_note') }}</th>
             </tr>
           </thead>
 
-        <tbody style="background-color:#f0fafa;">
-          <tr v-for="item in paginatedBookings" :key="item.appointment_ID">
-            <td class="text-center">{{ formatDate(item.date) }}</td>
-            <td class="text-center">{{ item.time }}</td>
+          <tbody style="background-color:#f0fafa;">
+            <tr v-for="item in paginatedBookings" :key="item.appointment_ID">
+              <td class="text-center">{{ formatDate(item.date) }}</td>
+              <td class="text-center">{{ item.time }}</td>
 
-            <!-- ✅ แปลสถานที่ตามภาษา -->
-            <td >{{ placeLabel(item.place_name) }}</td>
+              <!-- ✅ แปลสถานที่ตามภาษา -->
+              <td>{{ placeLabel(item.place_name) }}</td>
 
-            <!-- ✅ แปลประเภทบริการตามภาษา -->
-            <td >
-              <div style="padding:8px 12px;">
-                {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}
-              </div>
-            </td>
+              <!-- ✅ แปลประเภทบริการตามภาษา -->
+              <td>
+                <div style="padding:8px 12px;">
+                  {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}
+                </div>
+              </td>
 
-            <td >{{ item.full_name }}</td>
-            <td class="text-center">{{ item.user_email }}</td>
-            <td class="text-center">{{ item.phone_number }}</td>
+              <td>{{ item.full_name }}</td>
+              <td class="text-center">{{ item.user_email }}</td>
+              <td class="text-center">{{ item.phone_number }}</td>
 
-            <td>
-              <div class="d-flex align-center justify-center">
-                <v-chip
-                  v-if="item.status === 'approved'"
-                  color="green" text-color="white"
-                  @click="openDialog(item)" class="cursor-pointer"
-                >
-                  <v-icon start small>mdi-check-circle</v-icon>
-                  {{ t('status.approved') }}
-                </v-chip>
+              <td>
+                <div class="d-flex align-center justify-center">
+                  <v-chip
+                    v-if="item.status === 'approved'"
+                    color="green" text-color="white"
+                    @click="openDialog(item)" class="cursor-pointer"
+                  >
+                    <v-icon start small>mdi-check-circle</v-icon>
+                    {{ t('status.approved') }}
+                  </v-chip>
 
-                <v-chip v-else-if="item.status === 'rejected'" color="red" text-color="white">
-                  <v-icon start small>mdi-close-circle</v-icon>
-                  {{ t('status.rejected') }}
-                </v-chip>
+                  <v-chip v-else-if="item.status === 'rejected'" color="red" text-color="white">
+                    <v-icon start small>mdi-close-circle</v-icon>
+                    {{ t('status.rejected') }}
+                  </v-chip>
 
-                <v-chip v-else-if="item.status === 'completed'" color="blue" text-color="white">
-                  <v-icon start small>mdi-check-decagram</v-icon>
-                  {{ t('status.completed') }}
-                </v-chip>
+                  <v-chip v-else-if="item.status === 'completed'" color="blue" text-color="white">
+                    <v-icon start small>mdi-check-decagram</v-icon>
+                    {{ t('status.completed') }}
+                  </v-chip>
 
-                <v-chip v-else-if="item.status === 'cancelled'" color="grey" text-color="white">
-                  <v-icon start small>mdi-cancel</v-icon>
-                  {{ t('status.cancelled') }}
-                </v-chip>
-              </div>
-            </td>
-          </tr>
-        </tbody>
+                  <v-chip v-else-if="item.status === 'cancelled'" color="grey" text-color="white">
+                    <v-icon start small>mdi-cancel</v-icon>
+                    {{ t('status.cancelled') }}
+                  </v-chip>
+                </div>
+              </td>
+
+              <!-- ✅ หมายเหตุ (ห่อบรรทัดอัตโนมัติ) -->
+              <td>
+                <div class="wrap-cell">
+                  {{ displayNote(item) }}
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </v-table>
 
         <v-pagination
@@ -134,6 +143,7 @@ const staffBookings = ref([])
 const dialog = ref(false)
 const selectedItem = ref(null)
 const adviceDetail = ref('')
+
 const search = ref('')
 
 /** ===== Utils: วันที่ตาม locale (TH ใช้ พ.ศ.) ===== */
@@ -151,14 +161,12 @@ function formatDate(dateStr) {
 }
 
 /** ===== แปลสถานที่ & ประเภทบริการ ===== */
-
-// สถานที่: map ชื่อจาก backend -> คีย์ i18n ใน appointment.*
 function placeLabel(name) {
   const map = new Map([
     ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
     ['ออนไลน์', 'appointment.online'],
     ['M4U (ตึก M-square)', 'appointment.msquare'],
-    // รองรับเคส EN ถ้าฝั่ง backend ส่งอังกฤษมา
+    // EN fallback
     ['Building C1 Room 112', 'appointment.on_site'],
     ['Online', 'appointment.online'],
     ['M4U (M-square building)', 'appointment.msquare']
@@ -167,7 +175,6 @@ function placeLabel(name) {
   return key ? t(key) : name
 }
 
-// ประเภทบริการ: ใช้รหัสก่อน ถ้าไม่มีลองเดาจากข้อความ
 function serviceLabel(serviceId, serviceType, otherType) {
   if (serviceId === 1) return t('appointment.life')
   if (serviceId === 2) return t('appointment.study')
@@ -183,6 +190,17 @@ function serviceLabel(serviceId, serviceType, otherType) {
   return serviceType || t('history.unspecified')
 }
 
+/** ===== รวม/แสดงค่า “หมายเหตุ” ที่อาจมาหลายชื่อฟิลด์ ===== */
+function displayNote(item) {
+  return (
+    item?.appointment_summary || 
+    item?.note ||
+    item?.advice ||
+    item?.remarks ||
+    '-'
+  )
+}
+
 /** ===== Data ===== */
 const translatedBookings = computed(() =>
   staffBookings.value.filter(item =>
@@ -190,7 +208,7 @@ const translatedBookings = computed(() =>
   )
 )
 
-/** ค้นหา: ชื่อ, อีเมล, เบอร์, สถานที่, ประเภท, สถานะ, รหัสนักศึกษาหน้าอีเมล */
+/** ค้นหา: ชื่อ, อีเมล, เบอร์, สถานที่, ประเภท, สถานะ, รหัสนักศึกษาหน้าอีเมล, และ “หมายเหตุ” */
 const filteredBookings = computed(() => {
   const keyword = (search.value || '').toLowerCase().trim()
   if (!keyword) return translatedBookings.value
@@ -204,7 +222,11 @@ const filteredBookings = computed(() => {
       item.place_name,
       item.other_type,
       item.service_type,
-      item.status
+      item.status,
+      item.appointment_summary,
+      item.note,
+      item.advice,
+      item.remarks
     ]
     return studentIdPart.includes(keyword) ||
       fields.some(x => (x || '').toString().toLowerCase().includes(keyword))
@@ -252,3 +274,10 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.wrap-cell {
+  white-space: normal;     
+  word-break: break-word;    
+}
+</style>

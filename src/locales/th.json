@@ -98,7 +98,8 @@
     "msg_rejected": "ปฏิเสธเคสสำเร็จ",
     "err_reject": "เกิดข้อผิดพลาดในการปฏิเสธเคส",
     "unspecified": "ไม่ระบุ"
-  },"history": {
+  },
+  "history": {
     "title": "รายการประวัติคำขอเข้ารับคำปรึกษา",
     "search": "ค้นหา",
     "col_date": "วันที่นัด",
@@ -113,7 +114,8 @@
     "advice_label": "คำแนะนำ",
     "btn_cancel": "ยกเลิก",
     "btn_save": "บันทึก",
-    "unspecified": "ไม่ระบุ"
+    "unspecified": "ไม่ระบุ",
+    "col_note": "หมายเหตุ"
   },
   "dashboard": {
     "title": "รายงานคำขอเข้ารับบริการ",
