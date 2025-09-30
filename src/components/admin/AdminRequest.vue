@@ -1,4 +1,3 @@
-
 <template>
   <v-app>
     <v-main>
@@ -28,23 +27,27 @@
 
           <tbody style="background-color: #f0fafa;">
             <tr v-for="item in paginatedBookings" :key="item.appointment_ID">
-              <td>{{ formatDate(item.date) }}</td>
-              <td>{{ item.time }}</td>
-              <td>{{ placeLabel(item.place_name) }}</td>
+              <td><span class="one-line">{{ formatDate(item.date) }}</span></td>
+
+              <td><span class="one-line">{{ item.time }}</span></td>
+
+              <td><span class="one-line">{{ displayPlaceName(item) }}</span></td>
+
               <td>
-                <div style="padding: 8px 12px;">
-                  {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}
+                <div style="padding: 8px 12px;"><span class="one-line">
+                    {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}</span>
                 </div>
               </td>
-              <td>{{ item.full_name || '-' }}</td>
-              <td>{{ item.user_email }}</td>
-              <td>{{ item.phone_number }}</td>
+
+              <td><span class="one-line">{{ item.full_name || '-' }}</span></td>
+
+              <td><span class="one-line">{{ item.user_email }}</span></td>
+
+              <td><span class="one-line">{{ item.phone_number }}</span></td>
+
               <td class="text-center">
-                <v-chip
-                  v-if="item.status === 'pending'"
-                  color="#FF6F00" text-color="black"
-                  @click="openAssignDialog(item)"
-                >
+                <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black"
+                  @click="openAssignDialog(item)">
                   <v-icon start small>mdi-timer-sand</v-icon>
                   {{ t('status.pending') }}
                 </v-chip>
@@ -69,14 +72,8 @@
           </tbody>
         </v-table>
 
-        <v-pagination
-          v-model="page"
-          :length="pageCount"
-          :total-visible="5"
-          next-icon="mdi-chevron-right"
-          prev-icon="mdi-chevron-left"
-          class="mt-6 d-flex justify-center"
-        />
+        <v-pagination v-model="page" :length="pageCount" :total-visible="5" next-icon="mdi-chevron-right"
+          prev-icon="mdi-chevron-left" class="mt-6 d-flex justify-center" />
 
         <!-- Dialog รายละเอียด/อนุมัติ/ปฏิเสธ -->
         <v-dialog v-model="showDialog" max-width="600px">
@@ -101,9 +98,10 @@
                 <p><strong>{{ t('adminReq.f_date') }}:</strong> {{ formatDate(selectedAppointment.date) }}</p>
                 <p><strong>{{ t('adminReq.f_time') }}:</strong> {{ selectedAppointment.time }}</p>
                 <p><strong>{{ t('adminReq.f_type') }}:</strong>
-                  {{ serviceLabel(selectedAppointment.service_ID, selectedAppointment.service_type, selectedAppointment.other_type) }}
+                  {{ serviceLabel(selectedAppointment.service_ID, selectedAppointment.service_type,
+                    selectedAppointment.other_type) }}
                 </p>
-                <p><strong>{{ t('adminReq.f_place') }}:</strong> {{ placeLabel(selectedAppointment.place_name) }}</p>
+                <p><strong>{{ t('adminReq.f_place') }}:</strong> {{ displayPlaceName(selectedAppointment) }}</p>
               </div>
             </v-card-text>
 
@@ -126,12 +124,8 @@
             </v-card-title>
 
             <v-card-text class="pa-0">
-              <v-textarea
-                v-model="rejectReason"
-                :label="t('adminReq.reject_reason_label')"
-                auto-grow variant="outlined" rows="3" counter="500"
-                :rules="[v => !!v && v.trim().length > 0 || t('adminReq.reject_reason_rule')]"
-              />
+              <v-textarea v-model="rejectReason" :label="t('adminReq.reject_reason_label')" auto-grow variant="outlined"
+                rows="3" counter="500" :rules="[v => !!v && v.trim().length > 0 || t('adminReq.reject_reason_rule')]" />
             </v-card-text>
 
             <v-card-actions class="justify-end mt-4 pa-0">
@@ -211,10 +205,22 @@ const submitReject = async () => {
 // วันที่ตาม locale ปัจจุบัน
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString(
-    locale.value === 'th' ? 'th-TH' : 'en-US',
-    { day: '2-digit', month: '2-digit', year: 'numeric' }
-  )
+  const d = new Date(dateString)
+  if (isNaN(d.getTime())) return '-'
+
+  if (locale.value === 'th') {
+    // แสดงเป็น วัน/เดือน/พ.ศ.
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear() + 543
+    return `${day}/${month}/${year}`
+  } else {
+    // แสดงเป็น วัน/เดือน/ค.ศ.
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    return `${day}/${month}/${year}`
+  }
 }
 
 // โหลดข้อมูล
@@ -233,21 +239,12 @@ const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 5))
 
 onMounted(fetchAppointments)
 
-/** ===== แปลสถานที่ & ประเภทบริการ ===== */
-
-// สถานที่: map ชื่อจาก backend -> คีย์ i18n แล้วคืน label ตามภาษา
-function placeLabel(name) {
-  const map = new Map([
-    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
-    ['ออนไลน์', 'appointment.online'],
-    ['M4U (ตึก M-square)', 'appointment.msquare'],
-    // รองรับเคสฝั่งอังกฤษ
-    ['Building C1 Room 112', 'appointment.on_site'],
-    ['Online', 'appointment.online'],
-    ['M4U (M-square building)', 'appointment.msquare']
-  ])
-  const key = map.get(name)
-  return key ? t(key) : name
+function displayPlaceName(p = {}) {
+  const code = String(locale.value || '').toLowerCase();
+  const th = (p.place_name_th || p.name_th || '').trim();
+  const en = (p.place_name_en || p.name_en || '').trim();
+  const name = code.startsWith('en') ? (en || th) : (th || en);
+  return name || '-'             // <- เผื่อว่างทั้งคู่
 }
 
 // ประเภทบริการ: ใช้รหัสก่อน ถ้าไม่มีลองเดาจากข้อความ
@@ -268,8 +265,33 @@ function serviceLabel(serviceId, serviceType, otherType) {
 </script>
 
 <style scoped>
-h2 { font-weight: bold; color: #009199; }
-.dialog-card { padding-top: 56px !important; }
-.close-btn { position: absolute; top: 12px; right: 12px; color: #666; }
-@media (max-width: 600px) { .dialog-card { padding-top: 48px !important; } }
+.one-line {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+h2 {
+  font-weight: bold;
+  color: #009199;
+}
+
+.dialog-card {
+  padding-top: 56px !important;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .dialog-card {
+    padding-top: 48px !important;
+  }
+}
 </style>

@@ -15,8 +15,8 @@ app.use((req, res, next) => {
 // connect MySQL
 const db = mysql.createConnection({
   host: "localhost",
-  user: "root",
-  password: "",
+  user: "counselling",
+  password: "uW9Zlc]pX3!PHlak",
   database: "counselling-queue",
 });
 
@@ -29,12 +29,10 @@ db.connect((err) => {
 });
 
 /* =========================
- *  สร้างการจอง (POST)
+ * สร้างการจอง (POST)
  * ========================= */
 app.post("/api/appointments", (req, res) => {
   console.log("POST /api/appointments called");
-  console.log("Body =", req.body);
-
   const {
     full_name,
     date,
@@ -42,62 +40,58 @@ app.post("/api/appointments", (req, res) => {
     phone,
     serviceType,
     otherService,
-    channel,
+    place_ID,
     nationality,
     email,
   } = req.body;
 
-  if (!full_name || !email || !date || !time || !channel || !phone) {
+  if (!full_name || !email || !date || !time || !place_ID || !phone) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // หา place_ID จากชื่อสถานที่
+  // ยืนยันว่า place_ID มีอยู่จริง
   db.query(
-    "SELECT place_ID FROM place WHERE place_name = ? LIMIT 1",
-    [channel],
-    (err, placeResults) => {
-      if (err || placeResults.length === 0) {
-        return res.status(500).json({ error: "ไม่พบสถานที่" });
-      }
+    "SELECT 1 FROM place WHERE place_ID = ? LIMIT 1",
+    [place_ID],
+    (err, ok) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (ok.length === 0)
+        return res.status(404).json({ error: "ไม่พบสถานที่" });
 
-      const place_ID = placeResults[0].place_ID;
+      // map serviceType -> service_ID
+      const serviceMap = { life: 1, study: 2, emotion: 3, other: 4 };
+      const service_ID = serviceMap[serviceType] || null;
 
-      // ตรวจ slot ซ้ำ (ยกเว้น rejected / cancelled)
-      db.query(
-        "SELECT 1 FROM appointment WHERE date = ? AND time = ? AND place_ID = ? AND status NOT IN ('rejected','cancelled')",
-        [date, time, place_ID],
-        (err, existing) => {
-          if (err) return res.status(500).json({ error: err });
-          if (existing.length > 0) {
-            return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
-          }
-
-          // map serviceType -> service_ID
-          const serviceMap = { life: 1, study: 2, emotion: 3, other: 4 };
-          const service_ID = serviceMap[serviceType] || null;
-
-          saveAppointment(
-            {
-              email,
-              full_name,
-              date,
-              time,
-              phone,
-              service_ID,
-              otherService,
-              place_ID,
-              nationality,
-            },
-            res
-          );
-        }
+      // ปล่อยให้ saveAppointment ตัดสินใจ (atomic) ว่าว่างหรือไม่
+      saveAppointment(
+        {
+          email,
+          full_name,
+          date,
+          time,
+          phone,
+          service_ID,
+          otherService,
+          place_ID,
+          nationality,
+        },
+        res
       );
     }
   );
 });
 
+// Dashboard Year ชั้นปี จากเมล
+// ดึง 10 หลักแรกที่เป็นตัวเลขจากอีเมล ---
+function deriveStudentIdFromEmail(email = "") {
+  if (!email) return null;
+  const local = String(email).split("@")[0];
+  const digits = (local.match(/\d+/g) || []).join("");
+  return digits.length >= 10 ? digits.slice(0, 10) : null;
+}
+
 /* =========================
- *  บันทึกการจอง (ฟังก์ชัน)
+ * บันทึกการจอง (ฟังก์ชัน)
  * ========================= */
 function saveAppointment(
   {
@@ -113,83 +107,79 @@ function saveAppointment(
   },
   res
 ) {
+  const student_id = deriveStudentIdFromEmail(email);
+
   const sql = `
     INSERT INTO appointment (
-      user_email,
-      full_name,
-      phone_number,
-      date,
-      time,
-      staff_ID,
-      service_ID,
-      other_type,
-      place_ID,
-      nationality,
-      status,
-      appointment_summary
+      user_email, student_id, full_name, phone_number,
+      date, time, staff_ID, service_ID, other_type,
+      place_ID, nationality, status, appointment_summary
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?
+    FROM DUAL
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM appointment
+      WHERE date = ? AND time = ? AND place_ID = ?
+        AND status NOT IN ('rejected','cancelled')
+    )
   `;
 
   const values = [
     email,
+    student_id,
     full_name,
     phone,
     date,
     time,
-    null,                 // staff_ID ยังไม่ assign
+    null,
     service_ID,
     otherService || "",
     place_ID,
     nationality,
     "pending",
-    "",                   // appointment_summary (ค่าว่างเริ่มต้น)
+    "",
+    date,
+    time,
+    place_ID,
   ];
 
-  console.log("Saving appointment:", values);
   db.query(sql, values, (err, result) => {
     if (err) {
       console.error("Insert error:", err);
-      return res.status(500).json({ error: err });
+      return res.status(500).json({ error: "DB error" });
+    }
+    if (result.affectedRows === 0) {
+      // มีคนจองตัดหน้าพอดี
+      return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
     }
     res.json({ message: "จองสำเร็จ", appointmentID: result.insertId });
   });
 }
 
 /* =========================
- *  เวลาที่ถูกจองแล้ว (GET)
+ * เวลาที่ถูกจองแล้ว (GET)
  * ========================= */
 app.get("/api/appointments/occupied", (req, res) => {
-  const { date, place_name } = req.query;
-
-  if (!date || !place_name) {
-    return res.status(400).json({ error: "Missing date or place_name" });
+  const { date, place_ID } = req.query;
+  if (!date || !place_ID) {
+    return res.status(400).json({ error: "Missing date or place_ID" });
   }
 
-  db.query(
-    "SELECT place_ID FROM place WHERE place_name = ? LIMIT 1",
-    [place_name],
-    (err, placeResults) => {
-      if (err || placeResults.length === 0) {
-        return res.status(500).json({ error: "ไม่พบสถานที่" });
-      }
-
-      const place_ID = placeResults[0].place_ID;
-      db.query(
-        "SELECT time FROM appointment WHERE date = ? AND place_ID = ? AND status NOT IN ('rejected','cancelled')",
-        [date, place_ID],
-        (err, results) => {
-          if (err) return res.status(500).json({ error: err });
-          const times = results.map((r) => r.time);
-          res.json(times);
-        }
-      );
-    }
-  );
+  const sql = `
+    SELECT DISTINCT time
+    FROM appointment
+    WHERE date = ? AND place_ID = ?
+      AND status NOT IN ('rejected','cancelled')
+  `;
+  db.query(sql, [date, place_ID], (err, rows) => {
+    if (err) return res.status(500).json({ error: "DB error" });
+    res.json(rows.map((r) => r.time));
+  });
 });
 
 /* =========================
- *  staff รับเคส / ปฏิเสธเคส
+ * staff รับเคส / ปฏิเสธเคส
  * ========================= */
 app.put("/api/appointments/:id/assign", (req, res) => {
   const appointmentID = req.params.id;
@@ -206,6 +196,7 @@ app.put("/api/appointments/:id/assign", (req, res) => {
     }
   );
 });
+
 app.put("/api/appointments/:id/reject", (req, res) => {
   const appointmentID = req.params.id;
   // รองรับทั้งสองชื่อ เพื่อกันพลาดจาก front ที่ส่งมาไม่ตรง
@@ -216,7 +207,7 @@ app.put("/api/appointments/:id/reject", (req, res) => {
   console.log("PUT /reject", { appointmentID, staff_ID, reason });
 
   if (!staff_ID) return res.status(400).json({ error: "Missing staff_ID" });
-  if (!reason)   return res.status(400).json({ error: "Missing reject reason" });
+  if (!reason) return res.status(400).json({ error: "Missing reject reason" });
 
   const sql = `
     UPDATE appointment 
@@ -225,6 +216,7 @@ app.put("/api/appointments/:id/reject", (req, res) => {
         reject_reason = ?
     WHERE appointment_ID = ?
   `;
+
   db.query(sql, [staff_ID, reason, appointmentID], (err, result) => {
     if (err) {
       console.error("Reject update error:", err);
@@ -233,17 +225,18 @@ app.put("/api/appointments/:id/reject", (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Appointment not found" });
     }
+
     // ส่งค่ากลับมาดูให้ชัดว่า reason ถูกบันทึก
-    res.json({ message: "ปฏิเสธเคสสำเร็จ", appointmentID, reject_reason: reason });
+    res.json({
+      message: "ปฏิเสธเคสสำเร็จ",
+      appointmentID,
+      reject_reason: reason,
+    });
   });
 });
 
-
-
-
-
 /* =========================
- *  รายการจอง (staff ดู pending)
+ * รายการจอง (staff ดู pending)
  * ========================= */
 app.get("/api/appointments", (req, res) => {
   const sql = `
@@ -257,7 +250,9 @@ app.get("/api/appointments", (req, res) => {
       a.phone_number,
       a.user_email,
       a.full_name,
-      p.place_name,
+      p.place_ID,
+      p.place_name_th,
+      p.place_name_en,
       st.service_type
     FROM appointment a
     LEFT JOIN place p ON a.place_ID = p.place_ID
@@ -265,6 +260,7 @@ app.get("/api/appointments", (req, res) => {
     WHERE a.status IN ('pending')
     ORDER BY a.appointment_ID DESC
   `;
+
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ error: err });
     res.json(results);
@@ -272,7 +268,7 @@ app.get("/api/appointments", (req, res) => {
 });
 
 /* =========================
- *  สถานะการจองของ user
+ * สถานะการจองของ user
  * ========================= */
 app.get("/api/appointments/status", (req, res) => {
   const { email } = req.query;
@@ -288,11 +284,15 @@ app.get("/api/appointments/status", (req, res) => {
       a.status,
       a.service_ID,
       a.reject_reason,  
-      p.place_name,
+      p.place_ID,
+      p.place_name_th,
+      p.place_name_en,
       a.other_type,
       st.service_type,
-      s.first_name,
-      s.last_name
+      s.first_name_th,
+      s.last_name_th,
+      s.first_name_en,
+      s.last_name_en
     FROM appointment a
     LEFT JOIN place p ON a.place_ID = p.place_ID
     LEFT JOIN service_type st ON a.service_ID = st.service_ID
@@ -300,6 +300,7 @@ app.get("/api/appointments/status", (req, res) => {
     WHERE a.user_email = ?
     ORDER BY a.appointment_ID DESC
   `;
+
   db.query(sql, [email], (err, results) => {
     if (err) return res.status(500).json({ error: err });
     res.json(results);
@@ -307,7 +308,7 @@ app.get("/api/appointments/status", (req, res) => {
 });
 
 /* =========================
- *  ยกเลิกการจอง (ไม่เก็บเหตุผล)
+ * ยกเลิกการจอง (ไม่เก็บเหตุผล)
  * ========================= */
 app.put("/api/appointments/:id/cancel", (req, res) => {
   const appointmentId = Number(req.params.id);
@@ -327,30 +328,24 @@ app.put("/api/appointments/:id/cancel", (req, res) => {
       console.error("Error during cancellation update:", err);
       return res.status(500).json({ error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
     }
-
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "ไม่พบนัดหมายที่ต้องการยกเลิก" });
     }
-
     res.json({ message: "Appointment cancelled" });
   });
 });
-
 
 /* =========================
  *  ประวัติ (approved / rejected / completed / cancelled)
  * ========================= */
 app.get("/api/history", (req, res) => {
   const { staff_ID, role } = req.query;
-  if (!role) {
-    return res.status(400).json({ error: "Missing role" });
-  }
+  if (!role) return res.status(400).json({ error: "Missing role" });
 
   let sql;
   let values = [];
 
   if (role === "admin") {
-
     sql = `
       SELECT 
         a.appointment_ID,
@@ -362,7 +357,13 @@ app.get("/api/history", (req, res) => {
         a.phone_number,
         a.user_email,
         a.full_name,
-        p.place_name,
+        a.staff_ID,
+        CASE 
+          WHEN a.staff_ID = ? THEN a.appointment_summary
+          ELSE NULL
+        END AS appointment_summary,
+        p.place_name_th,
+        p.place_name_en,
         st.service_type
       FROM appointment a
       LEFT JOIN place p ON a.place_ID = p.place_ID
@@ -370,6 +371,7 @@ app.get("/api/history", (req, res) => {
       WHERE a.status IN ('approved','rejected','completed','cancelled')
       ORDER BY a.appointment_ID DESC
     `;
+    values = [Number(staff_ID) || 0];
   } else if (staff_ID) {
     sql = `
       SELECT 
@@ -382,16 +384,20 @@ app.get("/api/history", (req, res) => {
         a.phone_number,
         a.user_email,
         a.full_name,
-        p.place_name,
+        a.staff_ID,
+        a.appointment_summary,
+        p.place_ID,
+        p.place_name_th,
+        p.place_name_en,
         st.service_type
       FROM appointment a
       LEFT JOIN place p ON a.place_ID = p.place_ID
       LEFT JOIN service_type st ON a.service_ID = st.service_ID
-      WHERE a.staff_ID = ? 
-        AND a.status IN ('approved','rejected','completed')
+      WHERE a.staff_ID = ?
+        AND a.status IN ('approved','rejected','completed','cancelled')
       ORDER BY a.appointment_ID DESC
     `;
-    values = [staff_ID];
+    values = [Number(staff_ID) || 0];
   } else {
     return res.status(400).json({ error: "Missing staff_ID" });
   }
@@ -406,9 +412,9 @@ app.get("/api/history", (req, res) => {
  *  ปิดเคส + บันทึกสรุปคำแนะนำ (เก็บในตาราง appointment)
  * ========================= */
 app.post("/api/appointments/complete", (req, res) => {
-  const { appointment_ID, advice_detail } = req.body;
+  const { appointment_ID, advice_detail, staff_ID } = req.body;
 
-  if (!appointment_ID || !advice_detail) {
+  if (!appointment_ID || !advice_detail || !staff_ID) {
     return res.status(400).json({ error: "Missing data" });
   }
 
@@ -416,35 +422,43 @@ app.post("/api/appointments/complete", (req, res) => {
     UPDATE appointment
     SET status = 'completed',
         appointment_summary = ?
-    WHERE appointment_ID = ?
+    WHERE appointment_ID = ? AND staff_ID = ?
   `;
 
-  db.query(sql, [advice_detail, appointment_ID], (err, result) => {
-    if (err) {
-      console.error("Update failed:", err);
-      return res.status(500).json({ error: "Update failed" });
+  db.query(
+    sql,
+    [advice_detail, Number(appointment_ID), Number(staff_ID)],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Update failed" });
+      if (result.affectedRows === 0) {
+        return res
+          .status(403)
+          .json({ error: "Permission denied or not found" });
+      }
+      res.json({ message: "Completed successfully" });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Appointment not found" });
-    }
-    res.json({ message: "Completed successfully" });
-  });
+  );
 });
-
 
 /* =========================
  *  Dashboard Summary
  * ========================= */
 app.get("/api/dashboard", (req, res) => {
-  const { period } = req.query;
+  const { period, startDate: qsStart, endDate: qsEnd } = req.query;
 
   let whereClause = "";
-  let params = [];
+  const params = [];
+  const today = dayjs();
 
-  if (period && period !== "ทั้งหมด") {
+  // 1) ถ้ามี start/end จาก query ให้ใช้ก่อน
+  if (qsStart && qsEnd) {
+    whereClause = "WHERE a.date BETWEEN ? AND ?";
+    params.push(qsStart, qsEnd);
+  }
+
+  // 2) ถ้าไม่มี ให้ใช้ period แทน
+  else if (period && period !== "ทั้งหมด") {
     let startDate, endDate;
-    const today = dayjs();
-
     switch (period) {
       case "สัปดาห์นี้":
         startDate = today.startOf("week");
@@ -467,7 +481,6 @@ app.get("/api/dashboard", (req, res) => {
         endDate = today;
         break;
     }
-
     if (startDate && endDate) {
       whereClause = "WHERE a.date BETWEEN ? AND ?";
       params.push(startDate.format("YYYY-MM-DD"), endDate.format("YYYY-MM-DD"));
@@ -533,6 +546,48 @@ app.get("/api/dashboard", (req, res) => {
     ORDER BY month
   `;
 
+  const dateWhere = whereClause ? whereClause : "WHERE 1=1";
+
+  // แยกชั้นปีตามสูตร: (ปีการศึกษาไทยปัจจุบัน − intakeYY) + 1
+  const byYearQuery = `
+    SELECT year, COUNT(*) AS count
+    FROM (
+      SELECT
+        CASE
+          WHEN currYY < intakeYY THEN NULL
+          ELSE LEAST(GREATEST((currYY - intakeYY) + 1, 1), 4)
+        END AS year
+      FROM (
+        SELECT 
+          CAST(SUBSTRING(a.student_id,1,2) AS UNSIGNED) AS intakeYY,
+          MOD((YEAR(CURDATE()) + 543 - (MONTH(CURDATE()) < 8)), 100) AS currYY
+        FROM appointment a
+        ${dateWhere}
+          AND a.status NOT IN ('rejected','cancelled')
+          AND a.student_id REGEXP '^[0-9]{10}$'
+      ) s
+    ) x
+    WHERE year IS NOT NULL
+    GROUP BY year
+    ORDER BY year
+  `;
+
+  const byFacultyQuery = `
+    SELECT 
+      mm.faculty_th,
+      mm.faculty_en,
+      COUNT(*) AS count
+    FROM appointment a
+    JOIN major_map mm
+      ON mm.major_code = SUBSTRING(a.student_id, 4, 4)
+    ${dateWhere}
+      AND a.status NOT IN ('rejected','cancelled')
+      AND a.student_id REGEXP '^[0-9]{10}$'
+    GROUP BY mm.faculty_th, mm.faculty_en
+    ORDER BY count DESC
+  `;
+
+  // === Run queries ===
   db.query(summaryQuery, params, (err1, summaryResult) => {
     if (err1) return res.status(500).json({ error: err1 });
 
@@ -551,13 +606,24 @@ app.get("/api/dashboard", (req, res) => {
             db.query(monthlyTrendQuery, params, (err6, trendResult) => {
               if (err6) return res.status(500).json({ error: err6 });
 
-              res.json({
-                summary: summaryResult[0],
-                serviceTypes: allServices,
-                completedTypes: completedServices,
-                byDay: dayResult,
-                byTime: timeResult,
-                monthlyTrend: trendResult,
+              db.query(byYearQuery, params, (err7, yearResult) => {
+                if (err7) return res.status(500).json({ error: err7 });
+
+                // byFaculty
+                db.query(byFacultyQuery, params, (errF, facultyResult) => {
+                  if (errF) return res.status(500).json({ error: errF });
+
+                  res.json({
+                    summary: summaryResult[0],
+                    serviceTypes: allServices,
+                    completedTypes: completedServices,
+                    byDay: dayResult,
+                    byTime: timeResult,
+                    monthlyTrend: trendResult,
+                    byFaculty: facultyResult,
+                    byYear: yearResult,
+                  });
+                });
               });
             });
           });
@@ -591,67 +657,67 @@ app.put("/api/places/:id/status", (req, res) => {
   );
 });
 
-// GET ดึง staff ทั้งหมด
+// GET ดึง staff ทั้งหมด (ส่งชื่อ 2 ภาษาออกไป)
 app.get("/api/staff", (req, res) => {
-  db.query(
-    "SELECT first_name, last_name, email, phone_number, staff_status, role FROM staff",
-    (err, results) => {
-      if (err) {
-        console.error("Error fetching staff:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      const staffList = results.map((s) => ({
-        first_name: s.first_name,
-        last_name: s.last_name,
-        name: `${s.first_name} ${s.last_name}`,
-        email: s.email,
-        phone: s.phone_number,
-        active: s.staff_status === "active",
-        role: s.role,
-      }));
-
-      res.json(staffList);
-    }
-  );
+  const sql = `
+    SELECT staff_ID, email, phone_number, role, staff_status,
+           first_name_th, last_name_th, first_name_en, last_name_en
+    FROM staff
+  `;
+  db.query(sql, (err, rows) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    const staffList = rows.map((s) => ({
+      email: s.email,
+      phone: s.phone_number,
+      role: s.role,
+      active: s.staff_status === "active",
+      first_name_th: s.first_name_th,
+      last_name_th: s.last_name_th,
+      first_name_en: s.first_name_en,
+      last_name_en: s.last_name_en,
+    }));
+    res.json(staffList);
+  });
 });
 
-// API Staff เปิดปิดเพิ่ม 
-// POST เพิ่ม staff ใหม่
+// API Staff เปิดปิดเพิ่ม
+// POST เพิ่ม staff ใหม่ (รับชื่อ 2 ภาษา)
 app.post("/api/staff", (req, res) => {
-  const { first_name, last_name, email, phone_number, role } = req.body;
-
-  console.log("เพิ่ม staff:", {
-    first_name,
-    last_name,
+  const {
+    first_name_th,
+    last_name_th,
+    first_name_en,
+    last_name_en,
     email,
     phone_number,
     role,
-  });
-
-  if (!first_name || !last_name || !email || !role) {
-    console.error("Missing fields:", { first_name, last_name, email, role });
+  } = req.body;
+  if (
+    !email ||
+    (!first_name_th && !first_name_en) ||
+    (!last_name_th && !last_name_en)
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-
   const sql = `
-    INSERT INTO staff (first_name, last_name, email, phone_number, role, staff_status)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO staff
+      (first_name_th, last_name_th, first_name_en, last_name_en, email, phone_number, role, staff_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
   `;
-
   db.query(
     sql,
-    [first_name, last_name, email, phone_number, role, "active"],
+    [
+      first_name_th,
+      last_name_th,
+      first_name_en,
+      last_name_en,
+      email,
+      phone_number,
+      role || "staff",
+    ],
     (err, result) => {
-      if (err) {
-        console.error("Error adding staff:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      res.json({
-        message: "เพิ่ม staff สำเร็จ",
-        staff_ID: result.insertId,
-      });
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json({ message: "เพิ่ม staff สำเร็จ", staff_ID: result.insertId });
     }
   );
 });
@@ -678,51 +744,36 @@ app.put("/api/staff/status", (req, res) => {
   );
 });
 
-// GET ดึง staff ทั้งหมด
-app.get("/api/staff", (req, res) => {
-  db.query(
-    "SELECT first_name, last_name, email, phone_number, staff_status, role FROM staff",
-    (err, results) => {
-      if (err) {
-        console.error("Error fetching staff:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      const staffList = results.map((s) => ({
-        first_name: s.first_name,
-        last_name: s.last_name,
-        name: `${s.first_name} ${s.last_name}`,
-        email: s.email,
-        phone: s.phone_number,
-        active: s.staff_status === "active",
-        role: s.role,
-      }));
-
-      res.json(staffList);
-    }
-  );
-});
-
 app.get("/api/places", (req, res) => {
   db.query("SELECT * FROM place", (err, results) => {
     if (err) return res.status(500).json({ error: err });
-    res.json(results);
+    const formatted = results.map((p) => ({
+      place_ID: p.place_ID,
+      name_th: p.place_name_th,
+      name_en: p.place_name_en,
+      target_group: p.target_group,
+      place_status: p.place_status,
+    }));
+    res.json(formatted);
   });
 });
 
 app.post("/api/places", (req, res) => {
-  const { name, target } = req.body;
+  const { name_th, name_en, target } = req.body;
 
-  if (!name || !target) {
-    return res.status(400).json({ error: "Missing name or target" });
+  if (!name_th && !name_en) {
+    return res.status(400).json({ error: "Missing name" });
+  }
+  if (!target) {
+    return res.status(400).json({ error: "Missing target group" });
   }
 
   const sql = `
-    INSERT INTO place (place_name, place_status, target_group)
-    VALUES (?, ?, ?)
+    INSERT INTO place (place_name_th, place_name_en, place_status, target_group)
+    VALUES (?, ?, 'open', ?)
   `;
 
-  db.query(sql, [name, "open", target], (err, result) => {
+  db.query(sql, [name_th || "", name_en || "", target], (err, result) => {
     if (err) {
       console.error("Failed to insert place:", err);
       return res.status(500).json({ error: "Database error" });
@@ -731,7 +782,8 @@ app.post("/api/places", (req, res) => {
     res.json({
       message: "เพิ่มสถานที่สำเร็จ",
       place_ID: result.insertId,
-      name,
+      name_th,
+      name_en,
       target,
       place_status: "open",
     });
@@ -757,7 +809,9 @@ app.get("/api/search", (req, res) => {
       a.phone_number,
       a.user_email,
       a.full_name,
-      p.place_name,
+      p.place_ID,
+      p.place_name_th,
+      p.place_name_en,
       st.service_type
     FROM appointment a
     LEFT JOIN place p ON a.place_ID = p.place_ID
@@ -790,24 +844,55 @@ app.post("/api/login", (req, res) => {
     return res.status(400).json({ error: "Missing email" });
   }
 
-  email = email.trim().toLowerCase();
+  email = String(email).trim().toLowerCase();
 
-  db.query("SELECT * FROM staff WHERE email = ?", [email], (err, results) => {
+  const sql = `
+    SELECT 
+      staff_ID,
+      role,
+      staff_status,
+      email,
+      phone_number,
+     first_name_th,
+     last_name_th,
+     first_name_en,
+     last_name_en
+    FROM staff
+    WHERE email = ?
+    LIMIT 1
+  `;
+
+  db.query(sql, [email], (err, rows) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Database error" });
     }
 
-    if (results.length > 0) {
-      const staff = results[0];
-      if (staff.staff_status !== "active") {
+    if (rows.length > 0) {
+      const s = rows[0];
+      if (s.staff_status !== "active") {
         return res.status(403).json({ error: "บัญชีถูกปิดการใช้งาน" });
       }
+
+      // ประกอบชื่อ 2 ภาษา + ชื่อ fallback (คง field name เดิมไว้เพื่อ backward-compat)
+      const name_th = [s.first_name_th, s.last_name_th]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const name_en = [s.first_name_en, s.last_name_en]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const legacy_name = name_th || name_en || ""; // name เดิม ไว้ให้โค้ดเก่ายังใช้ได้
       return res.json({
         message: "เข้าสู่ระบบเจ้าหน้าที่",
-        staff_ID: staff.staff_ID,
-        role: staff.role,
-        name: `${staff.first_name} ${staff.last_name}`,
+        staff_ID: s.staff_ID,
+        role: s.role,
+        email: s.email,
+        phone_number: s.phone_number || null,
+        name: legacy_name,
+        name_th, // ชื่อไทย
+        name_en, // ชื่ออังกฤษ
       });
     }
 

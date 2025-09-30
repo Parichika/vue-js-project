@@ -9,33 +9,24 @@
           <h1 class="text-h5 font-weight-bold">{{ t('dashboard.title') }}</h1>
         </div>
 
-        <!-- Date Range Picker -->
-        <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition" offset-y min-width="auto">
-          <template #activator="{ props }">
-            <v-text-field
-              v-model="dateRangeText"
-              :label="t('dashboard.pick_range')"
-              prepend-icon="mdi-calendar"
-              readonly
-              clearable
-              @click:clear="clearRange"
-              v-bind="props"
-              variant="outlined"
-              density="comfortable"
-              color="#009199"
-              style="max-width: 260px;"
-            />
-          </template>
+        <div class="filters">
+          <v-text-field v-model="start" type="date" :max="today" :label="t('dashboard.start_date')"
+            density="comfortable" variant="outlined" class="date-field" @keydown.enter="applyRange" />
 
-          <!-- ไฮไลต์ช่วง -->
-          <v-date-picker
-            v-model="dateRangeArr"
-            multiple="range"
-            :max="today"
-            color="#009199"
-            @update:model-value="onDateRangeChange"
-          />
-        </v-menu>
+          <div class="sep">–</div>
+
+          <v-text-field v-model="end" type="date" :min="start || undefined" :max="today"
+            :label="t('dashboard.end_date')" density="comfortable" variant="outlined" class="date-field"
+            @keydown.enter="applyRange" />
+
+          <v-btn color="primary" class="action ml-2" :disabled="!canApply" @click="applyRange">
+            {{ t('dashboard.filter') }}
+          </v-btn>
+
+          <v-btn variant="tonal" color="grey" class="action" @click="clearAll">
+            {{ t('dashboard.clear') }}
+          </v-btn>
+        </div>
       </v-col>
     </v-row>
 
@@ -93,17 +84,16 @@
     </v-row>
 
     <!-- NEW: By Year -->
-<v-row>
-  <v-col cols="12" md="12">
-    <v-card class="pa-4">
-      <div class="d-flex align-center mb-2">
-        <h3 class="subtitle-1 mb-0">{{ t('dashboard.chart_year') }}</h3>
-      </div>
-      <Bar :data="barChartYearData" :options="barChartOptions" style="height:300px" />
-    </v-card>
-  </v-col>
-</v-row>
-
+    <v-row>
+      <v-col cols="12" md="12">
+        <v-card class="pa-4">
+          <div class="d-flex align-center mb-2">
+            <h3 class="subtitle-1 mb-0">{{ t('dashboard.chart_year') }}</h3>
+          </div>
+          <Bar :data="barChartYearData" :options="barChartOptions" style="height:300px" />
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- By Faculty -->
     <v-row>
@@ -113,11 +103,11 @@
             <h3 class="subtitle-1 mb-0">{{ t('dashboard.chart_faculty') }}</h3>
           </div>
           <!-- ใช้ barChartOptions เหมือนกราฟอื่นๆ และคงความสูง 400px -->
-          <Bar :data="barChartFacultyData" :options="barChartOptions" style="height:400px" />
+          <Bar :data="barChartFacultyData" :options="barChartOptions"
+            :key="(locale === 'th' ? 'th' : 'en') + '-' + barChartFacultyData.labels.join('|')" style="height:400px" />
         </v-card>
       </v-col>
     </v-row>
-
   </v-container>
 </template>
 
@@ -136,57 +126,72 @@ ChartJS.register(Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement,
 
 const { t, locale } = useI18n()
 
-// date range picker state
-const menu = ref(false)
-const dateRangeArr = ref([]) // ['YYYY-MM-DD','YYYY-MM-DD']
+// ---- Date filter (Start/End) ----
+const start = ref('')                // 'YYYY-MM-DD'
+const end = ref('')                // 'YYYY-MM-DD'
 const today = new Date().toISOString().slice(0, 10)
 
-const fmtTH = d => new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })
-const fmtEN = d => new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
-const dateRangeText = computed(() => {
-  if (dateRangeArr.value.length !== 2) return ''
-  const [s, e] = [...dateRangeArr.value].sort()
-  const fmt = locale.value === 'th' ? fmtTH : fmtEN
-  return `${fmt(s)} – ${fmt(e)}`
+const canApply = computed(() => {
+  if (!start.value && !end.value) return false
+  if (start.value && end.value) return start.value <= end.value
+  return Boolean(start.value) // อนุญาตวันเดียว
 })
 
-const clearRange = () => {
-  dateRangeArr.value = []
+const applyRange = () => {
+  if (!canApply.value) return
+  const s = start.value
+  const e = end.value || start.value
+  loadDashboardData(s, e)
+}
+
+const clearAll = () => {
+  start.value = ''
+  end.value = ''
   loadDashboardData()
 }
 
-const onDateRangeChange = (val) => {
-  if (!val || val.length < 2) return
-  const [start, end] = [...val].sort()
-  dateRangeArr.value = [start, end]
-  menu.value = false
-  loadDashboardData(start, end)
-}
-
-// ================= API =================
+// ---- Data container ----
 const dashboardData = ref({
   summary: {},
   serviceTypes: [],
   byDay: [],
   byTime: [],
-  byFaculty: [], // [{ faculty: 'วิศวกรรมศาสตร์', count: 12 }]
-  byYear: []     // [{ year: 1, count: 30 }, ...]
+  byFaculty: [],
+  byYear: []
 })
 
+// ---- API ----
 const loadDashboardData = async (startDate, endDate) => {
   try {
     const res = await axios.get('http://localhost:3000/api/dashboard', {
-      params: { startDate: startDate ?? null, endDate: endDate ?? null }
+      params: { startDate: startDate ?? null, endDate: endDate ?? null, _: Date.now() },
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
     })
-    dashboardData.value = res.data
+    dashboardData.value = res.data ?? {
+      summary: {}, serviceTypes: [], byDay: [], byTime: [], byFaculty: [], byYear: []
+    }
   } catch (err) {
     console.error('❌ load dashboard failed:', err)
   }
 }
 
-onMounted(() => loadDashboardData())
+onMounted(() => {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = d.getMonth()
 
-// ===== service type helpers =====
+  const toYMD = (dt) =>
+    `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+
+  const first = new Date(y, m, 1)
+  const todayLocal = d
+
+  start.value = toYMD(first)
+  end.value = toYMD(todayLocal)
+  loadDashboardData(start.value, end.value)
+})
+
+// ---- Helpers for labels/colors ----
 function serviceKeyFromName(name = '') {
   const n = name.toLowerCase()
   if (/(ชีวิต|ปรับตัว|life|adjust)/.test(n)) return 'life'
@@ -195,18 +200,15 @@ function serviceKeyFromName(name = '') {
   if (/(other|อื่น)/.test(n)) return 'other'
   return null
 }
+
 function labelFromKey(key, { short = false } = {}) {
-  if (!key) return t('dashboard.unspecified')
+  if (!key) return t('dashboard.unspecified') || '—'
   return short ? t(`dashboard.short_${key}`) : t(`appointment.${key}`)
 }
+
 function colorFromKey(key) {
-  const map = {
-    life: '#81C784',
-    study: '#64B5F6',
-    emotion: '#E57373',
-    other: '#FFD54F'
-  }
-  return map[key] || '#ccc'
+  const map = { life: '#81C784', study: '#64B5F6', emotion: '#F48FB1', other: '#FFD54F' }
+  return map[key] || '#E5E7EB'
 }
 
 // ===== summary card info =====
@@ -248,7 +250,7 @@ const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 const dayI18n = (en) => t(`dashboard.day_${en.toLowerCase()}`)
 const barChartDayData = computed(() => {
   const map = Object.fromEntries((dashboardData.value.byDay || []).map(i => [i.day, i.count]))
-  const pastel = ['#FFF176', '#F8BBD0', '#AED581', '#FFCC80', '#90CAF9', '#CE93D8', '#EF9A9A']
+  const pastel = ['#FFD54F', '#F48FB1', '#81C784', '#FFB74D', '#64B5F6', '#BA68C8', '#E57373']
   return {
     labels: dayOrder.map(d => dayI18n(d)),
     datasets: [{
@@ -273,7 +275,7 @@ const barChartTimeData = computed(() => {
       i.count
     ])
   )
-  const colors = ['#FFECB3', '#B3E5FC', '#C8E6C9', '#D1C4E9']
+  const colors = ['#FFD54F', '#4DB6AC', '#FFB74D', '#9575CD']
   return {
     labels: fixedTimeSlots,
     datasets: [{
@@ -283,9 +285,6 @@ const barChartTimeData = computed(() => {
     }]
   }
 })
-
-// ===== By Faculty =====
-const facultyPalette = ['#A5D6A7', '#81D4FA', '#FFAB91', '#CE93D8', '#FFF59D', '#B39DDB', '#80CBC4', '#F48FB1', '#FFE082', '#C5E1A5', '#B2EBF2', '#FFCDD2', '#D1C4E9', '#DCEDC8', '#FFECB3']
 
 const FACULTY_ORDER_TH = [
   'สำนักวิชาศิลปศาสตร์',
@@ -322,6 +321,61 @@ const FACULTY_ORDER_EN = [
   'School of Integrative Medicine'
 ]
 
+// Mapping สีประจำสำนักวิชา
+const FACULTY_COLOR = {
+  'สำนักวิชาศิลปศาสตร์': '#9E9E9E', // เทา
+  'School of Liberal Arts': '#9E9E9E',
+
+  'สำนักวิชาวิทยาศาสตร์': '#FFEB3B', // เหลือง
+  'School of Science': '#FFEB3B',
+
+  'สำนักวิชาการจัดการ': '#03A9F4', // ฟ้า
+  'School of Management': '#03A9F4',
+
+  'สำนักวิชาเทคโนโลยีดิจิทัลประยุกต์': '#0D47A1', // น้ำเงินเข้ม
+  'School of Applied Digital Technology': '#0D47A1',
+
+  'สำนักวิชาอุตสาหกรรมเกษตร': '#E1BEE7', // ชมพูอ่อน
+  'School of Agro-Industry': '#E1BEE7',
+
+  'สำนักวิชานิติศาสตร์': '#FFFFFF', // ขาว
+  'School of Law': '#FFFFFF',
+
+  'สำนักวิชาวิทยาศาสตร์เครื่องสำอาง': '#E91E63', // ชมพูเข้ม
+  'School of Cosmetic Science': '#E91E63',
+
+  'สำนักวิชาวิทยาศาสตร์สุขภาพ': '#388E3C', // เขียว
+  'School of Health Science': '#388E3C',
+
+  'สำนักวิชาพยาบาลศาสตร์': '#FF5722', // ส้มเข้ม
+  'School of Nursing': '#FF5722',
+
+  'สำนักวิชาเวชศาสตร์ชะลอวัยและฟื้นฟูสุขภาพ': '#00695C', // เขียวเข้ม
+  'School of Anti-Aging and Regenerative Medicine': '#00695C',
+
+  'สำนักวิชาแพทยศาสตร์': '#2E7D32', // เขียวหม่น
+  'School of Medicine': '#2E7D32',
+
+  'สำนักวิชาทันตแพทยศาสตร์': '#673AB7', // ม่วงเข้ม
+  'School of Dentistry': '#673AB7',
+
+  'สำนักวิชานวัตกรรมสังคม': '#FBC02D', // เหลืองเข้ม
+  'School of Social Innovation': '#FBC02D',
+
+  'สำนักวิชาจีนวิทยา': '#D32F2F', // แดง
+  'School of Chinese Studies': '#D32F2F',
+
+  'สำนักวิชาการแพทย์บูรณาการ': '#0288D1', // ฟ้าอมเขียว
+  'School of Integrative Medicine': '#0288D1'
+}
+
+// ===== By Faculty =====
+const facultyPalette = [
+  '#A5D6A7', '#81D4FA', '#FFAB91', '#CE93D8', '#FFF59D',
+  '#B39DDB', '#80CBC4', '#F48FB1', '#FFE082', '#C5E1A5',
+  '#B2EBF2', '#FFCDD2', '#D1C4E9', '#DCEDC8', '#FFECB3'
+]
+
 const barChartFacultyData = computed(() => {
   const rows = dashboardData.value.byFaculty || []
 
@@ -337,12 +391,20 @@ const barChartFacultyData = computed(() => {
   const labels = locale.value === 'th' ? FACULTY_ORDER_TH : FACULTY_ORDER_EN
   const data = labels.map(lbl => countMap[lbl] || 0)
 
+  const bg = labels.map((lbl, idx) =>
+    FACULTY_COLOR[lbl] ?? facultyPalette[idx % facultyPalette.length]
+  )
+  // เส้นขอบเฉพาะแท่งสีขาว
+  const borders = bg.map(c => (c.toUpperCase() === '#FFFFFF' ? '#BDBDBD' : 'rgba(0,0,0,0)'))
+
   return {
     labels,
     datasets: [{
       label: t('dashboard.ds_created'),
-      backgroundColor: labels.map((_, idx) => facultyPalette[idx % facultyPalette.length]),
-      data
+      data,
+      backgroundColor: bg,
+      borderColor: borders,
+      borderWidth: 1
     }]
   }
 })
@@ -391,5 +453,32 @@ const barChartOptions = {
 <style scoped>
 .text-right {
   text-align: right;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.date-field :deep(.v-field) {
+  height: 56px;
+}
+
+.sep {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  margin: 0 4px;
+  font-size: 20px;
+  color: #616161;
+}
+
+.action {
+  height: 56px;
+  padding: 0 20px;
+  border-radius: 12px;
 }
 </style>

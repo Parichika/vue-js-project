@@ -19,18 +19,25 @@
           <tbody style="background-color: #f0fafa">
             <tr v-for="(item, index) in paginatedBookings" :key="item.appointment_ID">
               <td class="text-start">{{ item.date }}</td>
-              <td class="text-start">{{ item.time }}</td>
+              <td class="text-start"><span class="one-line">{{ item.time }}</span></td>
 
               <!-- ✅ แปลสถานที่ตามภาษา -->
-              <td class="text-start">{{ placeLabel(item.place_name) }}</td>
+              <td class="text-start">
+                <span class="one-line">{{ displayPlaceName(item) }}</span>
+              </td>
 
               <!-- ✅ แปลประเภทบริการตามภาษา -->
-              <td class="text-start">{{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}</td>
+              <td class="text-start">
+                <span class="one-line">
+                  {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}</span>
+              </td>
 
-              <td class="text-start">{{ item.staff || '-' }}</td>
+              <td class="text-start"><span class="one-line">{{ staffLabel(item) }}</span></td>
+
               <td>
                 <div class="d-flex align-center justify-center ga-2">
-                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black" @click="openCancelDialog(index)">
+                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black"
+                    @click="openCancelDialog(index)">
                     <v-icon start small>mdi-timer-sand</v-icon>
                     {{ t('status.pending') }}
                   </v-chip>
@@ -54,7 +61,7 @@
               </td>
 
               <td class="text-start">
-                <span v-if="item.status === 'rejected' && item.note" :title="item.note">
+                <span v-if="item.status === 'rejected' && item.note" class="one-line" :title="item.note">
                   {{ item.note }}
                 </span>
                 <span v-else>-</span>
@@ -64,17 +71,11 @@
         </v-table>
 
         <!-- Pagination -->
-        <v-pagination
-          v-model="page"
-          :length="pageCount"
-          :total-visible="5"
-          next-icon="mdi-chevron-right"
-          prev-icon="mdi-chevron-left"
-          class="mt-6 d-flex justify-center"
-        />
+        <v-pagination v-model="page" :length="pageCount" :total-visible="5" next-icon="mdi-chevron-right"
+          prev-icon="mdi-chevron-left" class="mt-6 d-flex justify-center" />
 
         <!-- Dialog ยืนยันการยกเลิก -->
-                <v-dialog v-model="cancelDialog" max-width="420" persistent>
+        <v-dialog v-model="cancelDialog" max-width="420" persistent>
           <v-card class="py-6 px-4" elevation="12" rounded="xl">
             <v-card-title class="d-flex flex-column align-center">
               <div class="confirm-icon">
@@ -144,9 +145,10 @@ const fetchBookings = async () => {
       return {
         ...item,
         date: formattedDate,
-        staff: item.first_name ? `${item.first_name} ${item.last_name}` : '-',
+        // ไม่ตั้งค่า staff ที่นี่
         type: item.service_ID === 4 && item.other_type ? item.other_type : (item.service_type || '-'),
-        place_name: item.place_name || '-',
+        place_name_th: item.place_name_th,
+        place_name_en: item.place_name_en,
         status: item.status || 'pending',
         appointment_ID: item.appointment_ID || '',
         note: item.reject_reason || ''
@@ -158,19 +160,18 @@ const fetchBookings = async () => {
 }
 onMounted(fetchBookings)
 
-// ✅ ฟังก์ชันแปล "สถานที่" ตามภาษา (ใช้คีย์ในไฟล์ appointment.*)
-function placeLabel(name) {
-  const map = new Map([
-    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
-    ['ออนไลน์', 'appointment.online'],
-    ['M4U (ตึก M-square)', 'appointment.msquare'],
-    // รองรับกรณีฝั่ง EN ส่งมา
-    ['Building C1 Room 112', 'appointment.on_site'],
-    ['Online', 'appointment.online'],
-    ['M4U (M-square building)', 'appointment.msquare']
-  ])
-  const key = map.get(name)
-  return key ? t(key) : name
+function staffLabel(item) {
+  const th = [item.first_name_th, item.last_name_th].filter(Boolean).join(' ').trim()
+  const en = [item.first_name_en, item.last_name_en].filter(Boolean).join(' ').trim()
+  return (locale.value === 'en' ? (en || th) : (th || en)) || '-'
+}
+
+function displayPlaceName(p = {}) {
+  const code = String(locale.value || '').toLowerCase()
+  const th = (p.place_name_th || p.name_th || '').trim()
+  const en = (p.place_name_en || p.name_en || '').trim()
+  const name = code.startsWith('en') ? (en || th) : (th || en);
+  return name || '-'             // <- เผื่อว่างทั้งคู่
 }
 
 // ✅ ฟังก์ชันแปล "ประเภทบริการ" ตามภาษา (ใช้รหัสก่อน, ถ้าไม่มีเดาจากข้อความ)
@@ -242,5 +243,13 @@ const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 7))
   margin-top: 8px;
   background: #fff3e0;
   color: #ff9800;
+}
+
+.one-line {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

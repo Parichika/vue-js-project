@@ -3,7 +3,8 @@
     <v-main class="main-bg">
       <!-- Language Bar -->
       <div class="lang-bar">
-        <v-btn class="lang-btn mr-2" depressed @click="setLang('th')" :class="{ 'selected-lang': lang === 'th' }">TH</v-btn>
+        <v-btn class="lang-btn mr-2" depressed @click="setLang('th')"
+          :class="{ 'selected-lang': lang === 'th' }">TH</v-btn>
         <v-btn class="lang-btn" depressed @click="setLang('en')" :class="{ 'selected-lang': lang === 'en' }">EN</v-btn>
       </div>
 
@@ -25,15 +26,8 @@
           </div>
 
           <!-- Alert error Message -->
-          <v-alert
-            v-if="errorKey"
-            type="error"
-            class="error-alert mt-3 mx-auto"
-            border="start"
-            icon="mdi-close-circle"
-            density="compact"
-            style="padding-right: 12px ; font-weight: bold;"
-          >
+          <v-alert v-if="errorKey" type="error" class="error-alert mt-3 mx-auto" border="start" icon="mdi-close-circle"
+            density="compact" style="padding-right: 12px ; font-weight: bold;">
             {{ t(errorKey) }}
           </v-alert>
 
@@ -113,7 +107,15 @@ const signInWithGoogle = async () => {
       const displayName = (user.displayName || '').trim()
       localStorage.setItem('name', displayName || user.email.split('@')[0])
     } else {
-      localStorage.setItem('name', res.data.name || user.displayName || '')
+      // staff/admin: รองรับ name_th / name_en จาก backend (ถ้า backend ยังไม่ส่งมาก็ fallback)
+      const nameTh = (res.data.name_th || '').trim()
+      const nameEn = (res.data.name_en || '').trim()
+      const legacy = (res.data.name || user.displayName || '').trim() // เผื่อโค้ดเดิมยังใช้ 'name'
+
+      // เก็บทั้งสาม key ไว้เพื่อ backward-compat
+      localStorage.setItem('name_th', nameTh)
+      localStorage.setItem('name_en', nameEn)
+      localStorage.setItem('name', legacy)
     }
 
     // นำทางตามบทบาท

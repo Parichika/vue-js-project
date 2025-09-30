@@ -20,17 +20,20 @@
       </thead>
       <tbody v-if="nonAdminStaff.length > 0">
         <tr v-for="staff in nonAdminStaff" :key="staff.email">
-          <td>{{ staff.name }}</td>
+          <!-- 1) Full name -->
+          <td>{{ staffDisplayName(staff) }}</td>
+
+          <!-- 2) Email -->
           <td>{{ staff.email }}</td>
-          <td>{{ staff.phone }}</td>
+
+          <!-- 3) Phone -->
+          <td>{{ staff.phone || '-' }}</td>
+
+          <!-- 4) Status -->
           <td>
-            <v-switch
-              v-model="staff.active"
-              inset color="green"
-              :label="staff.active ? t('common.on') : t('common.off')"
-              @change="updateStaffStatus(staff)"
-              hide-details
-            />
+            <v-switch v-model="staff.active" inset color="green"
+              :label="staff.active ? t('common.on') : t('common.off')" @change="updateStaffStatus(staff)"
+              hide-details />
           </td>
         </tr>
       </tbody>
@@ -42,16 +45,30 @@
         <v-card-title class="text-h6 font-weight-bold text-white bg-pink-darken-2">
           {{ t('manage.staff.dialog_title') }}
         </v-card-title>
+
         <v-card-text class="pb-0">
-          <v-text-field v-model="formStaff.name" :label="t('manage.staff.first_name')" variant="outlined"
-                        prepend-inner-icon="mdi-account" density="comfortable" class="mb-3" color="teal" />
-          <v-text-field v-model="formStaff.surname" :label="t('manage.staff.last_name')" variant="outlined"
-                        prepend-inner-icon="mdi-account" density="comfortable" class="mb-3" color="teal" />
+          <!-- name TH -->
+          <div class="mb-2 text-medium-emphasis">{{ t('manage.staff.section_th') }}</div>
+          <v-text-field v-model="formStaff.first_name_th" :label="t('manage.staff.first_name_th')" density="comfortable"
+            variant="outlined" prepend-inner-icon="mdi-account" />
+          <v-text-field v-model="formStaff.last_name_th" :label="t('manage.staff.last_name_th')" density="comfortable"
+            variant="outlined" prepend-inner-icon="mdi-account" />
+
+          <!-- name EN -->
+          <div class="mt-4 mb-2 text-medium-emphasis">{{ t('manage.staff.section_en') }}</div>
+          <v-text-field v-model="formStaff.first_name_en" :label="t('manage.staff.first_name_en')" density="comfortable"
+            variant="outlined" prepend-inner-icon="mdi-account-outline" />
+          <v-text-field v-model="formStaff.last_name_en" :label="t('manage.staff.last_name_en')" density="comfortable"
+            variant="outlined" prepend-inner-icon="mdi-account-outline" />
+
           <v-text-field v-model="formStaff.email" :label="t('manage.staff.email')" variant="outlined"
-                        prepend-inner-icon="mdi-email" type="email" density="comfortable" class="mb-3" color="teal" />
-          <v-text-field v-model="formStaff.phone" :label="t('manage.staff.phone')" variant="outlined"
-                        prepend-inner-icon="mdi-phone" type="tel" density="comfortable" class="mb-3" color="teal" />
+            prepend-inner-icon="mdi-email" type="email" density="comfortable" color="teal" />
+
+          <v-text-field v-model.trim="formStaff.phone" :label="t('manage.staff.phone')" variant="outlined"
+            prepend-inner-icon="mdi-phone" type="tel" inputmode="numeric" pattern="[0-9]*" :maxlength="10" counter
+            @keydown="onPhoneKeydown" @paste="onPhonePaste" />
         </v-card-text>
+
         <v-card-actions class="justify-end py-2">
           <v-btn variant="text" @click="dialogStaff = false">{{ t('common.cancel') }}</v-btn>
           <v-btn color="pink-darken-2" class="text-white" @click="addStaff">{{ t('common.add') }}</v-btn>
@@ -78,16 +95,13 @@
       <tbody>
         <tr v-for="place in placeList" :key="place.id">
           <!-- ✅ ชื่อสถานที่ในตาราง แปล 2 ภาษา -->
-          <td>{{ placeLabel(place.name) }}</td>
+          <td>{{ displayPlaceName(place) }}</td>
+
           <td>{{ targetLabel(place.target) }}</td>
           <td>
-            <v-switch
-              v-model="place.active"
-              inset color="green"
-              :label="place.active ? t('common.on') : t('common.off')"
-              @change="updatePlaceStatus(place)"
-              hide-details
-            />
+            <v-switch v-model="place.active" inset color="green"
+              :label="place.active ? t('common.on') : t('common.off')" @change="updatePlaceStatus(place)"
+              hide-details />
           </td>
         </tr>
       </tbody>
@@ -99,21 +113,23 @@
         <v-card-title class="text-h6 font-weight-bold text-white bg-blue-darken-2">
           {{ t('manage.place.dialog_title') }}
         </v-card-title>
+
         <v-card-text class="pb-0">
-          <v-text-field v-model="formPlace.name" :label="t('manage.place.name')" prepend-inner-icon="mdi-map-marker"
-                        variant="outlined" density="comfortable" color="teal" class="mb-3" />
-          <v-select
-            v-model="formPlace.target"
-            :label="t('manage.place.target_label')"
-            :items="placeTargetItems"
-            item-title="label" item-value="value"
-            prepend-inner-icon="mdi-account-group"
-            variant="outlined" density="comfortable" color="teal" class="mb-3"
-          />
+          <v-text-field v-model="formPlace.name_th" :label="t('manage.place.name_th')" variant="outlined"
+            density="comfortable" prepend-inner-icon="mdi-map-marker" class="mb-3" color="teal" />
+          <v-text-field v-model="formPlace.name_en" :label="t('manage.place.name_en')" variant="outlined"
+            density="comfortable" prepend-inner-icon="mdi-map-marker-outline" class="mb-3" color="teal" />
+
+          <v-select v-model="formPlace.target" :label="t('manage.place.target_label')" :items="placeTargetItems"
+            item-title="label" item-value="value" prepend-inner-icon="mdi-account-group" variant="outlined"
+            density="comfortable" class="mb-3" color="teal" />
         </v-card-text>
+
         <v-card-actions class="justify-end py-2">
           <v-btn variant="text" @click="dialogPlace = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="blue-darken-2" class="text-white" @click="addPlace">{{ t('common.add') }}</v-btn>
+          <v-btn color="blue-darken-2" class="text-white" @click="addPlace">
+            {{ t('common.add') }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -128,24 +144,56 @@ import axios from 'axios'
 /** รับภาษาและซิงค์ i18n.locale จากพาเรนต์ */
 const props = defineProps({ lang: { type: String, default: 'th' } })
 const { t, locale } = useI18n()
-watch(() => props.lang, l => { if (l === 'th' || l === 'en') locale.value = l }, { immediate: true })
+watch(
+  () => props.lang,
+  l => {
+    const code = String(l || '').toLowerCase();   // normalize
+    if (code === 'th' || code === 'en') locale.value = code;
+  },
+  { immediate: true }
+)
+
+function getStaffDisplayNameFromLS() {
+  const th = (localStorage.getItem('name_th') || '').trim()
+  const en = (localStorage.getItem('name_en') || '').trim()
+  const legacy = (localStorage.getItem('name') || '').trim()
+  return locale.value === 'en'
+    ? (en || th || legacy)
+    : (th || en || legacy)
+}
 
 /* ===== Staff ===== */
 const dialogStaff = ref(false)
-const formStaff = ref({ name: '', surname: '', email: '', phone: '' })
+const formStaff = ref({
+  first_name_th: '',
+  last_name_th: '',
+  first_name_en: '',
+  last_name_en: '',
+  email: '',
+  phone: ''
+})
 
 const staffList = ref([])
 const nonAdminStaff = computed(() => staffList.value.filter(s => s && s.role !== 'admin'))
+
+function staffDisplayName(s) {
+  const th = [s.first_name_th, s.last_name_th].filter(Boolean).join(' ').trim()
+  const en = [s.first_name_en, s.last_name_en].filter(Boolean).join(' ').trim()
+  return (locale.value === 'en' ? (en || th) : (th || en)) || '-'
+}
 
 const fetchStaffList = async () => {
   try {
     const res = await axios.get('http://localhost:3000/api/staff')
     staffList.value = res.data.map(s => ({
-      name: s.name || `${s.first_name || ''} ${s.last_name || ''}`.trim(),
       email: s.email,
       phone: s.phone || s.phone_number || '-',
       active: s.active === true || s.staff_status === 'active',
-      role: s.role
+      role: s.role,
+      first_name_th: s.first_name_th || '',
+      last_name_th: s.last_name_th || '',
+      first_name_en: s.first_name_en || '',
+      last_name_en: s.last_name_en || ''
     }))
   } catch (err) {
     console.error('Failed to fetch staff list:', err)
@@ -153,20 +201,23 @@ const fetchStaffList = async () => {
 }
 
 const addStaff = async () => {
-  if (!formStaff.value.name || !formStaff.value.surname || !formStaff.value.email) {
+  const f = formStaff.value
+  if (!f.email || (!f.first_name_th && !f.first_name_en) || (!f.last_name_th && !f.last_name_en)) {
     alert(t('manage.staff.err_required'))
     return
   }
   try {
     await axios.post('http://localhost:3000/api/staff', {
-      first_name: formStaff.value.name,
-      last_name: formStaff.value.surname,
-      email: formStaff.value.email,
-      phone_number: formStaff.value.phone,
+      first_name_th: f.first_name_th || null,
+      last_name_th: f.last_name_th || null,
+      first_name_en: f.first_name_en || null,
+      last_name_en: f.last_name_en || null,
+      email: f.email,
+      phone_number: f.phone || null,
       role: 'staff'
     })
     await fetchStaffList()
-    formStaff.value = { name: '', surname: '', email: '', phone: '' }
+    formStaff.value = { first_name_th: '', last_name_th: '', first_name_en: '', last_name_en: '', email: '', phone: '' }
     dialogStaff.value = false
   } catch (err) {
     console.error('Failed to add staff:', err)
@@ -175,18 +226,63 @@ const addStaff = async () => {
 }
 
 const updateStaffStatus = async (staff) => {
+  const prev = staff.active
   try {
     const status = staff.active ? 'active' : 'inactive'
     await axios.put('http://localhost:3000/api/staff/status', { email: staff.email, status })
   } catch (err) {
     console.error('Failed to update staff status:', err)
     alert(t('manage.staff.err_toggle'))
+    staff.active = !prev
   }
 }
 
+watch(dialogStaff, (open) => {
+  if (!open) {
+    formStaff.value = { first_name_th: '', last_name_th: '', first_name_en: '', last_name_en: '', email: '', phone: '' }
+  }
+})
+
+/* ===== Staff เบอร์โทร 10หลัก ===== */
+const onPhoneKeydown = (e) => {
+  if (e.isComposing) return // กัน IME
+  const k = e.key
+  const ctrl = e.ctrlKey || e.metaKey
+  const allow = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', 'Enter']
+  const allowCtrl = ['a', 'c', 'v', 'x']
+
+  if (allow.includes(k)) return
+  if (ctrl && allowCtrl.includes(k.toLowerCase())) return
+
+  // ห้ามเกิน 10 หลัก
+  if (/^\d$/.test(k) && String(formStaff.value.phone || '').length >= 10) {
+    e.preventDefault(); return
+  }
+  // ถ้าไม่ใช่เลข 0-9 ให้บล็อก
+  if (!/^\d$/.test(k)) e.preventDefault()
+}
+
+// ตัดให้เหลือ 10 หลัก
+const onPhonePaste = (e) => {
+  e.preventDefault()
+  const raw = (e.clipboardData?.getData('text') || '').replace(/\D/g, '')
+  const input = e.target
+  const start = input.selectionStart ?? input.value.length
+  const end = input.selectionEnd ?? input.value.length
+  const next = (input.value.slice(0, start) + raw + input.value.slice(end)).slice(0, 10)
+  input.value = next
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+// safety net
+watch(() => formStaff.value.phone, (v) => {
+  const clean = String(v || '').replace(/\D/g, '').slice(0, 10)
+  if (v !== clean) formStaff.value.phone = clean
+})
+
 /* ===== Places ===== */
 const dialogPlace = ref(false)
-const formPlace = ref({ name: '', target: '' })
+const formPlace = ref({ name_th: '', name_en: '', target: '' })
 const placeList = ref([])
 
 const fetchPlaceList = async () => {
@@ -194,8 +290,11 @@ const fetchPlaceList = async () => {
     const res = await axios.get('http://localhost:3000/api/places')
     placeList.value = res.data.map(p => ({
       id: p.place_ID,
-      name: p.place_name,
-      target: p.target_group === 'ไทย' ? 'ไทย' : p.target_group === 'ต่างชาติ' ? 'ต่างชาติ' : '-',
+      // key ใหม่จาก backend
+      name_th: p.name_th || p.place_name_th || '',
+      name_en: p.name_en || p.place_name_en || '',
+      target: p.target_group === 'ไทย' ? 'ไทย'
+        : p.target_group === 'ต่างชาติ' ? 'ต่างชาติ' : '-',
       active: p.place_status === 'open'
     }))
   } catch (err) {
@@ -210,20 +309,12 @@ const placeTargetItems = computed(() => [
 
 const targetLabel = (code) => (code === 'ไทย' ? t('manage.place.target_th') : code === 'ต่างชาติ' ? t('manage.place.target_intl') : '-')
 
-/** ✅ ฟังก์ชันแปลชื่อสถานที่ในตารางแบบ 2 ภาษา (ไม่กระทบค่าที่เก็บใน DB) */
-function placeLabel(name = '') {
-  const map = new Map([
-    // TH -> key
-    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
-    ['ออนไลน์', 'appointment.online'],
-    ['M4U (ตึก M-square)', 'appointment.msquare'],
-    // EN -> key (กรณี backend ส่งอังกฤษมา)
-    ['Building C1 Room 112', 'appointment.on_site'],
-    ['Online', 'appointment.online'],
-    ['M4U (M-square building)', 'appointment.msquare']
-  ])
-  const key = map.get(name.trim())
-  return key ? t(key) : name
+function displayPlaceName(p = {}) {
+  const code = String(locale.value || '').toLowerCase();
+  const th = (p.name_th || p.place_name_th || '').trim();
+  const en = (p.name_en || p.place_name_en || '').trim();
+  const name = code.startsWith('en') ? (en || th) : (th || en);
+  return name || '-'             // <- เผื่อว่างทั้งคู่
 }
 
 const updatePlaceStatus = async (place) => {
@@ -237,22 +328,25 @@ const updatePlaceStatus = async (place) => {
 }
 
 const addPlace = async () => {
-  if (!formPlace.value.name || !formPlace.value.target) {
+  const f = formPlace.value
+  if ((!f.name_th && !f.name_en) || !f.target) {
     alert(t('manage.place.err_required'))
     return
   }
   try {
     const res = await axios.post('http://localhost:3000/api/places', {
-      name: formPlace.value.name,
-      target: formPlace.value.target // 'ไทย' | 'ต่างชาติ'
+      name_th: f.name_th || '',
+      name_en: f.name_en || '',
+      target: f.target
     })
     placeList.value.push({
       id: res.data.place_ID,
-      name: res.data.name,     // เก็บชื่อดิบตาม backend
-      target: res.data.target, // 'ไทย' | 'ต่างชาติ'
+      name_th: res.data.name_th,
+      name_en: res.data.name_en,
+      target: res.data.target,
       active: true
     })
-    formPlace.value = { name: '', target: '' }
+    formPlace.value = { name_th: '', name_en: '', target: '' }
     dialogPlace.value = false
   } catch (err) {
     console.error('Failed to add place:', err)
@@ -267,6 +361,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.v-table thead th { font-weight: bold; }
+.v-table thead th {
+  font-weight: bold;
+}
 </style>
- 

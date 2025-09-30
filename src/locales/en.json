@@ -110,11 +110,15 @@
     "col_email": "Email",
     "col_phone": "Phone",
     "col_status": "Status",
-    "advice_title": "Provide Advice",
-    "advice_label": "Advice",
     "btn_cancel": "Cancel",
+    "col_summary": "Summary",
     "btn_save": "Save",
-    "unspecified": "Unspecified"
+    "advice_title": "Enter Advice",
+    "advice_label": "Advice",
+    "advice_required": "Please enter advice",
+    "advice_subtitle": "Record brief notes for later follow-up.",
+    "saved_success": "Saved successfully",
+    "saved_error": "Failed to save"
   },
   "dashboard": {
     "title": "Counselling Request Report",
@@ -163,8 +167,12 @@
     "faculty_dentistry": "School of Dentistry",
     "faculty_social_innovation": "School of Social Innovation",
     "faculty_chinese_studies": "School of Chinese Studies",
-    "faculty_integrative_medicine": "School of Integrative Medicine"
+    "faculty_integrative_medicine": "School of Integrative Medicine",
     
+    "start_date": "Start date",
+    "end_date": "End date",
+    "filter": "Filter",
+    "clear": "Clear"
   },
   "common": {
     "on": "On",
@@ -174,20 +182,23 @@
   },
   "manage": {
     "staff": {
-      "title": "Staff Management",
-      "btn_add": "Add Staff",
-      "col_name": "Full Name",
-      "col_email": "Email",
-      "col_phone": "Phone",
-      "col_status": "Account Status",
       "dialog_title": "Add Staff",
-      "first_name": "First name",
-      "last_name": "Last name",
+      "section_th": "Thai name",
+      "section_en": "English name",
+      "first_name_th": "First name (TH)",
+      "last_name_th": "Last name (TH)",
+      "first_name_en": "First name (EN)",
+      "last_name_en": "Last name (EN)",
       "email": "Email",
       "phone": "Phone number",
-      "err_required": "Please fill in all required fields",
+      "err_required": "Please fill name/surname in at least one language and email",
       "err_add": "Failed to add staff",
-      "err_toggle": "Failed to update account status"
+      "title": "Staff Management",
+      "btn_add": "Add Staff",
+      "col_name": "Full name",
+      "col_email": "Email",
+      "col_phone": "Phone",
+      "col_status": "Account Status"
     },
     "place": {
       "title": "Place Management",
@@ -196,7 +207,8 @@
       "col_target": "For students",
       "col_active": "Active",
       "dialog_title": "Add Place",
-      "name": "Place name",
+      "name_th": "Place Name (TH)",
+      "name_en": "Place Name (EN)",
       "target_label": "For students",
       "target_th": "Thai students",
       "target_intl": "International students",

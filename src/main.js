@@ -8,10 +8,14 @@ import router from "./router";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import "@mdi/font/css/materialdesignicons.css";
+import * as labs from "vuetify/labs/components";
 
 // เพิ่ม fontFamily ใน Vuetify config
 const vuetify = createVuetify({
-  components,
+  components: {
+    ...components,
+    ...labs,
+  },
   directives,
   defaults: {
     global: {
@@ -24,8 +28,16 @@ const vuetify = createVuetify({
     defaultTheme: "myTheme",
     themes: {
       myTheme: {
+        dark: false,
         colors: {
+          primary: "#009199",
+          secondary: "#005e63",
+          success: "#2e7d32",
+          warning: "#f9a825",
           error: "#ff0000",
+          info: "#1976d2",
+          background: "#FFFFFF",
+          surface: "#FFFFFF",
         },
       },
     },

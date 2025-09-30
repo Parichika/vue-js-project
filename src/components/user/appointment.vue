@@ -17,14 +17,8 @@
           </v-text-field>
 
           <!-- วันที่ -->
-          <v-text-field
-            v-model="form.date"
-            type="date"
-            :min="today"
-            :rules="[v => !!v]"
-            variant="outlined"
-            density="comfortable"
-          >
+          <v-text-field v-model="form.date" type="date" :min="today" :rules="[v => !!v]" variant="outlined"
+            density="comfortable">
             <template #label>
               <span style="color:black">{{ t('appointment.date') }}</span>
               <span style="color:red"> *</span>
@@ -32,15 +26,8 @@
           </v-text-field>
 
           <!-- เวลา -->
-          <v-select
-            v-model="form.time"
-            :items="timeOptions"
-            item-title="label"
-            item-value="value"
-            :rules="[v => !!v]"
-            variant="outlined"
-            density="comfortable"
-          >
+          <v-select v-model="form.time" :items="availableTimeOptions" item-title="label" item-value="value"
+            variant="outlined" density="comfortable" :loading="loadingOccupied" :disabled="!form.date || !form.channel">
             <template #label>
               <span style="color:black">{{ t('appointment.time') }}</span>
               <span style="color:red"> *</span>
@@ -63,22 +50,13 @@
               <span style="color:black">{{ t('appointment.channel') }}</span>
               <span style="color:red; margin-left:4px">*</span>
             </template>
-            <v-radio
-              v-for="opt in channelOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
+            <v-radio v-for="opt in channelOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </v-radio-group>
 
-          <!-- โทรศัพท์ -->
-          <v-text-field
-            v-model="form.phone"
-            type="tel"
-            :rules="[v => !!v, v => phoneOk(v)]"
-            variant="outlined"
-            density="comfortable"
-          >
+          <!-- โทรศัพท์: ตัวเลขเท่านั้น + ยาว 9–10 -->
+          <v-text-field v-model="form.phone" variant="outlined" density="comfortable"
+            :rules="[v => !!v, v => phoneOk(v)]" :maxlength="10" counter inputmode="numeric" pattern="[0-9]*"
+            @keydown="onlyDigits" @paste="pasteDigits">
             <template #label>
               <span style="color:black">{{ t('appointment.phone') }}</span>
               <span style="color:red"> *</span>
@@ -98,13 +76,8 @@
           </v-radio-group>
 
           <!-- อื่น ๆ -->
-          <v-text-field
-            v-if="form.serviceType === 'other'"
-            v-model="form.otherService"
-            :rules="[v => (form.serviceType !== 'other' || !!v)]"
-            variant="outlined"
-            density="comfortable"
-          >
+          <v-text-field v-if="form.serviceType === 'other'" v-model="form.otherService"
+            :rules="[v => (form.serviceType !== 'other' || !!v)]" variant="outlined" density="comfortable">
             <template #label>
               <span style="color:black">{{ t('appointment.specify') }}</span>
               <span style="color:red"> *</span>
@@ -116,7 +89,8 @@
             {{ t('appointment.privacy_note') }}
           </p>
 
-          <v-btn class="mt-6" color="#009199" variant="flat" size="large" block type="submit">
+          <v-btn class="mt-6" color="#009199" variant="flat" size="large" block type="submit" :loading="submitting"
+            :disabled="submitting">
             {{ t('appointment.submit') }}
           </v-btn>
         </v-form>
@@ -131,6 +105,8 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import dayjs from 'dayjs'
 
+const submitting = ref(false)
+
 /** sync locale จากพาเรนต์ */
 const props = defineProps({ lang: { type: String, default: 'th' } })
 const { t, locale } = useI18n()
@@ -139,6 +115,26 @@ watch(
   l => { if (l === 'th' || l === 'en') locale.value = l },
   { immediate: true }
 )
+
+// phone number 10 number
+const onlyDigits = (e) => {
+  const allow = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End']
+  if (allow.includes(e.key)) return
+  if (!/^\d$/.test(e.key)) e.preventDefault()
+}
+
+const pasteDigits = (e) => {
+  e.preventDefault()
+  const raw = (e.clipboardData?.getData('text') || '').replace(/\D/g, '')
+  const input = e.target
+  if (input) {
+    const start = input.selectionStart ?? input.value.length
+    const end = input.selectionEnd ?? input.value.length
+    const next = input.value.slice(0, start) + raw + input.value.slice(end)
+    input.value = next.slice(0, 10)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+}
 
 /** validation helpers */
 const phoneOk = (v) => /^0\d{8,9}$/.test(String(v || '').replace(/\s|-/g, ''))
@@ -163,55 +159,66 @@ const rawTimeSlots = [
   { th: '13.00 - 14.30 น.', en: '13:00 - 14:30', value: '13:00-14:30' },
   { th: '14.30 - 16.00 น.', en: '14:30 - 16:00', value: '14:30-16:00' }
 ]
-const timeOptions = computed(() =>
-  rawTimeSlots.map(s => ({ label: locale.value === 'th' ? s.th : s.en, value: s.value }))
-)
 
-/** แปลชื่อสถานที่ตามคีย์ appointment.* */
-function placeLabel(rawName = '') {
-  const map = new Map([
-    // TH -> key
-    ['อาคาร C1 ห้อง 112', 'appointment.on_site'],
-    ['ออนไลน์', 'appointment.online'],
-    ['M4U (ตึก M-square)', 'appointment.msquare'],
-    // EN -> key (กรณี backend ส่ง EN)
-    ['Building C1 Room 112', 'appointment.on_site'],
-    ['Online', 'appointment.online'],
-    ['M4U (M-square building)', 'appointment.msquare']
-  ])
-  const key = map.get((rawName || '').trim())
-  return key ? t(key) : rawName
+/** จัดการเวลาที่ถูกจอง */
+const loadingOccupied = ref(false)
+const occupiedTimes = ref([])
+
+const availableTimeOptions = computed(() => {
+  const set = new Set(occupiedTimes.value || [])
+  return rawTimeSlots
+    .filter(s => !set.has(s.value)) // ซ่อนเวลาที่ถูกจอง
+    .map(s => ({ label: locale.value === 'th' ? s.th : s.en, value: s.value }))
+})
+
+const occupiedHint = computed(() => {
+  if (!form.value.date || !form.value.channel) return ''
+  const count = (occupiedTimes.value || []).length
+  if (count === 0) return (locale.value === 'th')
+    ? 'เวลายังว่างทั้งหมด'
+    : 'All times are available'
+  return (locale.value === 'th')
+    ? `ปิด ${count} ช่วงเวลาที่ถูกจองแล้ว`
+    : `Closed ${count} time slot(s) already booked`
+})
+
+const fetchOccupiedTimes = async () => {
+  if (!form.value.date || !form.value.channel) { occupiedTimes.value = []; return }
+  loadingOccupied.value = true
+  try {
+    const res = await axios.get('http://localhost:3000/api/appointments/occupied', {
+      params: { date: form.value.date, place_ID: form.value.channel }
+    })
+    occupiedTimes.value = res.data || []
+    // ถ้าผู้ใช้เลือกช่วงเวลาที่ถูกจองไปแล้ว → ล้างค่าออก
+    if (occupiedTimes.value.includes(form.value.time)) {
+      form.value.time = ''
+    }
+  } catch {
+    occupiedTimes.value = []
+  } finally {
+    loadingOccupied.value = false
+  }
 }
+
+watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes, { immediate: true })
 
 /** ช่องทาง/สถานที่: แสดง label ตามภาษา แต่ส่งค่าเดิมกลับ backend */
 const allPlaces = ref([])
 const channelOptions = computed(() => {
-  if (!form.value.nationality) return []
   return allPlaces.value
-    .filter(
-      p =>
-        p.place_status === 'open' &&
-        p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
+    .filter(p =>
+      p.place_status === 'open' &&
+      p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
     )
-    .map(p => ({ label: placeLabel(p.place_name), value: p.place_name }))
+    .map(p => ({
+      label: locale.value === 'th' ? p.name_th : p.name_en,
+      value: p.place_ID // ส่งค่า place_ID กลับ backend
+    }));
 })
 
 /** today */
 const today = computed(() => dayjs().format('YYYY-MM-DD'))
-
-/** occupied (เตรียมไว้ในอนาคต) */
-const occupiedTimes = ref([])
-const fetchOccupiedTimes = async () => {
-  if (!form.value.date || !form.value.channel) { occupiedTimes.value = []; return }
-  try {
-    const res = await axios.get('http://localhost:3000/api/appointments/occupied', {
-      params: { date: form.value.date, place_name: form.value.channel }
-    })
-    occupiedTimes.value = res.data || []
-  } catch {
-    occupiedTimes.value = []
-  }
-}
 
 /** places + default channel */
 const fetchPlaces = async () => {
@@ -224,14 +231,13 @@ const fetchPlaces = async () => {
           p.place_status === 'open' &&
           p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
       )
-      if (firstOpenPlace) form.value.channel = firstOpenPlace.place_name
+      if (firstOpenPlace) form.value.channel = firstOpenPlace.place_ID
     }
   } catch {
     allPlaces.value = []
   }
 }
 
-watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes)
 onMounted(() => {
   fetchPlaces()
   fetchOccupiedTimes()
@@ -250,11 +256,15 @@ const scrollToFirstError = async () => {
 
 /** submit */
 const submitForm = async () => {
+  if (submitting.value) return
+  submitting.value = true
+
   const result = await formRef.value?.validate()
   const valid = result?.valid ?? result
   if (!valid) {
     alert(t('appointment.required_alert'))
     await scrollToFirstError()
+    submitting.value = false
     return
   }
 
@@ -265,36 +275,64 @@ const submitForm = async () => {
     phone: form.value.phone,
     serviceType: form.value.serviceType,
     otherService: form.value.otherService || null,
-    channel: form.value.channel,       // ส่งชื่อสถานที่ดิบ
+    place_ID: form.value.channel,
     nationality: form.value.nationality,
     email: localStorage.getItem('email') || null,
     name: localStorage.getItem('name') || null
   }
 
+  // check ยังว่างไหมก่อนกดจองจริง
+  try {
+    const check = await axios.get('http://localhost:3000/api/appointments/occupied', {
+      params: { date: form.value.date, place_ID: form.value.channel }
+    })
+    const occupied = new Set(check.data || [])
+    if (occupied.has(form.value.time)) {
+      await fetchOccupiedTimes()   // รีเฟรช UI ให้เห็นเวลาที่ปิด
+      alert(locale.value === 'th' ? 'ช่วงเวลานี้เพิ่งถูกจองไป กรุณาเลือกใหม่' : 'This slot was just booked. Please choose another.')
+      submitting.value = false
+      return
+    }
+  } catch (e) {
+  }
+
   try {
     await axios.post('http://localhost:3000/api/appointments', payload)
     alert(t('appointment.success_alert'))
-    resetForm()
-    fetchOccupiedTimes()
-    formRef.value?.resetValidation()
+    await resetForm()
   } catch (err) {
     const fallback = locale.value === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred'
     const msgErr = err.response?.data?.error || err.message || fallback
     alert(msgErr)
+  } finally {
+    submitting.value = false
   }
 }
 
-const resetForm = () => {
-  form.value = {
-    fullName: '',
-    date: '',
-    time: '',
-    nationality: 'ไทย',
-    channel: '',
-    phone: '',
-    serviceType: '',
-    otherService: ''
-  }
+const initialForm = () => ({
+  fullName: '',
+  date: '',
+  time: '',
+  nationality: 'ไทย',
+  channel: '',
+  phone: '',
+  serviceType: '',
+  otherService: ''
+})
+
+const setDefaultChannel = () => {
+  const firstOpen = allPlaces.value.find(
+    p => p.place_status === 'open' &&
+      p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
+  )
+  if (firstOpen) form.value.channel = firstOpen.place_ID
+}
+
+const resetForm = async () => {
+  form.value = initialForm()
+  await nextTick()
+  formRef.value?.resetValidation()
+  setDefaultChannel()
   occupiedTimes.value = []
 }
 </script>
