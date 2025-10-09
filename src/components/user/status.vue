@@ -3,6 +3,17 @@
   <v-app>
     <v-main>
       <v-container>
+        <!-- Info icon มุมขวาบน ของบล็อกตาราง -->
+        <!-- Info text + icon มุมขวาบน -->
+        <div class="table-header-actions">
+          <div class="info-inline clickable" @click="cancelInfoDialog = true">
+            <span class="info-text">{{ t('status.cancel_info_title') }}</span>
+            <v-avatar class="info-badge" size="26">
+              <v-icon size="16">mdi-information</v-icon>
+            </v-avatar>
+          </div>
+        </div>
+
         <v-table style="table-layout: fixed; width: 100%">
           <thead style="background-color: #009199; color: white">
             <tr>
@@ -97,6 +108,33 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
+
+        <!-- Dialog ข้อมูลวิธียกเลิก (modern) -->
+        <v-dialog v-model="cancelInfoDialog" max-width="420" transition="dialog-bottom-transition"
+          scrim="rgba(0,0,0,.35)">
+          <v-card class="modern-dialog" elevation="0" rounded="xl">
+            <div class="modern-title">
+              <div class="title-icon info">
+                <v-icon size="22">mdi-information</v-icon>
+              </div>
+              <div class="title-text">
+                {{ t('status.cancel_info_title') }}
+              </div>
+            </div>
+
+            <div class="modern-body">
+              <p class="content">
+                {{ t('status.cancel_info_desc') }}
+              </p>
+            </div>
+
+            <div class="modern-actions right">
+              <v-btn class="btn-primary" @click="cancelInfoDialog = false">
+                {{ t('status.cancel_info_ok') }}
+              </v-btn>
+            </div>
+          </v-card>
+        </v-dialog>
       </v-container>
     </v-main>
   </v-app>
@@ -106,6 +144,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
+
+const cancelInfoDialog = ref(false)
 
 const props = defineProps({
   lang: String,
@@ -251,5 +291,168 @@ const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 7))
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.table-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* ===== Modern Dialog Base ===== */
+.modern-dialog {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, .06);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, .16),
+    0 2px 6px rgba(0, 0, 0, .08);
+  padding: 18px 18px 16px;
+}
+
+/* ===== Title Row ===== */
+.modern-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 4px 2px;
+}
+
+.title-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+
+.title-icon.info {
+  background: linear-gradient(180deg, #f3e7da, #e7d5c2);
+  color: #8b5e3c;
+}
+
+.title-icon.warn {
+  background: linear-gradient(180deg, #ffe8d3, #ffd9c2);
+  color: #d6631e;
+}
+
+.title-text {
+  font-weight: 800;
+  font-size: 1.25rem;
+  /* ~20px */
+  letter-spacing: .2px;
+  color: #222;
+}
+
+/* ===== Body ===== */
+.modern-body {
+  padding: 10px 4px 2px;
+}
+
+.modern-body .content,
+.modern-body .hint {
+  margin: 0;
+  color: #333;
+  line-height: 1.55;
+  font-size: 0.98rem;
+}
+
+/* ===== Actions ===== */
+.modern-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 14px;
+  margin-top: 6px;
+}
+
+.modern-actions.right {
+  justify-content: flex-end;
+}
+
+.modern-actions:not(.right) {
+  justify-content: flex-end;
+}
+
+/* ===== Buttons (utility) ===== */
+.btn-primary {
+  background: #009199;
+  color: white;
+  border-radius: 12px;
+  text-transform: none;
+  letter-spacing: .2px;
+  padding: 8px 16px;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-danger {
+  background: #e53935;
+  color: white;
+  border-radius: 12px;
+  text-transform: none;
+  padding: 8px 16px;
+}
+
+.btn-danger:hover {
+  filter: brightness(1.05);
+}
+
+.btn-ghost {
+  background: #f2f4f5;
+  color: #333;
+  border-radius: 12px;
+  text-transform: none;
+  padding: 8px 16px;
+}
+
+.btn-ghost:hover {
+  background: #e9eef0;
+}
+
+.info-badge {
+  background: #f1e3d0;
+  color: #8b5e3c;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.info-badge:hover {
+  transform: scale(1.05);
+  background: rgba(255, 0, 0, 0.15);
+}
+
+.table-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.info-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-text {
+  color: #ff0000;
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+.info-badge {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff0000;
+  display: grid;
+  place-items: center;
+  cursor: default;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
 }
 </style>

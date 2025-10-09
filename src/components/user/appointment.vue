@@ -94,6 +94,51 @@
             {{ t('appointment.submit') }}
           </v-btn>
         </v-form>
+
+        <!-- Dialog จองสำเร็จ -->
+        <v-dialog v-model="successDialog" max-width="400" transition="dialog-bottom-transition" scrim="rgba(0,0,0,.35)">
+          <v-card class="success-card" rounded="xl" elevation="10">
+            <!-- ปุ่มกากบาท -->
+            <v-btn icon variant="text" class="close-btn" :aria-label="locale === 'th' ? 'ปิด' : 'Close'"
+              @click="successDialog = false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+
+            <div class="success-hero">
+              <svg viewBox="0 0 320 120" class="hero-svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-opacity="1" />
+                    <stop offset="100%" stop-opacity=".85" />
+                  </linearGradient>
+                </defs>
+                <g class="puffs">
+                  <rect x="20" y="40" width="130" height="18" rx="9"></rect>
+                  <rect x="60" y="60" width="90" height="14" rx="7"></rect>
+                  <rect x="180" y="48" width="120" height="16" rx="8"></rect>
+                  <rect x="210" y="68" width="70" height="12" rx="6"></rect>
+                </g>
+
+                <g class="badge">
+                  <circle cx="160" cy="60" r="30" class="ring"></circle>
+                  <path d="M148 60 l8 8 l16 -18" class="tick"></path>
+                </g>
+
+                <g class="sprinkles">
+                  <circle cx="120" cy="30" r="6"></circle>
+                  <circle cx="210" cy="92" r="6"></circle>
+                  <rect x="250" y="38" width="10" height="10" rx="2"></rect>
+                </g>
+              </svg>
+            </div>
+
+            <div class="text-center">
+              <h3 class="text-h6 font-weight-bold" style="color:#009199;">
+                {{ t('appointment.success_alert') }}
+              </h3>
+            </div>
+          </v-card>
+        </v-dialog>
       </v-container>
     </v-main>
   </v-app>
@@ -105,6 +150,7 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import dayjs from 'dayjs'
 
+const successDialog = ref(false)
 const submitting = ref(false)
 
 /** sync locale จากพาเรนต์ */
@@ -243,6 +289,21 @@ onMounted(() => {
   fetchOccupiedTimes()
 })
 
+// เมื่อผู้ใช้เปลี่ยนสัญชาติ → ตั้งค่า default channel อัตโนมัติ
+watch(() => form.value.nationality, (newNat) => {
+  const target = newNat === 'ไทย' ? 'ไทย' : 'ต่างชาติ'
+  const found = allPlaces.value.find(p => p.place_status === 'open' && p.target_group === target)
+  if (found) {
+    form.value.channel = found.place_ID
+  } else {
+    const fallback = allPlaces.value.find(p => p.place_status === 'open' && p.target_group === 'ไทย')
+    form.value.channel = fallback ? fallback.place_ID : ''
+  }
+
+  // โหลดเวลาว่างใหม่ตาม channel ที่เลือก
+  fetchOccupiedTimes()
+})
+
 /** scroll ไป field แรกที่ error */
 const scrollToFirstError = async () => {
   await nextTick()
@@ -298,12 +359,13 @@ const submitForm = async () => {
 
   try {
     await axios.post('http://localhost:3000/api/appointments', payload)
-    alert(t('appointment.success_alert'))
+    // alert(t('appointment.success_alert'))
+    successDialog.value = true
     await resetForm()
   } catch (err) {
     const fallback = locale.value === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred'
     const msgErr = err.response?.data?.error || err.message || fallback
-    alert(msgErr)
+    console.error(msgErr)
   } finally {
     submitting.value = false
   }
@@ -336,3 +398,95 @@ const resetForm = async () => {
   occupiedTimes.value = []
 }
 </script>
+
+<style scoped>
+.success-card {
+  position: relative;
+  padding: 22px 22px 18px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .06);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, .16),
+    0 2px 8px rgba(0, 0, 0, .08);
+}
+
+.close-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: rgba(0, 0, 0, .45);
+}
+
+.close-btn:hover {
+  color: rgba(0, 0, 0, .7);
+}
+
+.success-hero {
+  display: grid;
+  place-items: center;
+  margin: 6px 0 10px;
+}
+
+.hero-svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+}
+
+.puffs rect {
+  fill: #dff6df;
+  opacity: .8;
+}
+
+.badge .ring {
+  fill: #e9f9e9;
+  stroke: #5fbf53;
+  stroke-width: 4;
+}
+
+.badge .tick {
+  fill: none;
+  stroke: #43a047;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sprinkles circle,
+.sprinkles rect {
+  fill: #98d89a;
+}
+
+.puffs {
+  animation: float 3s ease-in-out infinite;
+}
+
+.badge {
+  animation: pop 280ms ease-out;
+  transform-origin: 160px 60px;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(.85);
+    opacity: .2;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+</style>
