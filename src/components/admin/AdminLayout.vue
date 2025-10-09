@@ -150,7 +150,6 @@ const activeMenuComponent = computed(() => {
 // ออกจากระบบ
 const logout = () => {
   localStorage.clear()
-  alert(locale.value === 'th' ? 'ออกจากระบบแล้ว' : 'You have been logged out')
   router.push({ name: 'SignIn' })
 }
 </script>

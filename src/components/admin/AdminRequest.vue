@@ -14,36 +14,27 @@
         <v-table style="table-layout: fixed;">
           <thead style="background-color: #009199; color: white;">
             <tr>
-              <th class="text-center" style="width: 8%;">{{ t('adminReq.col_date') }}</th>
-              <th class="text-center" style="width: 14%;">{{ t('adminReq.col_time') }}</th>
-              <th class="text-center" style="width: 10%;">{{ t('adminReq.col_location') }}</th>
-              <th class="text-center" style="width: 18%;">{{ t('adminReq.col_type') }}</th>
-              <th class="text-center" style="width: 26%;">{{ t('adminReq.col_booker') }}</th>
-              <th class="text-center" style="width: 15%;">{{ t('adminReq.col_email') }}</th>
-              <th class="text-center" style="width: 10%;">{{ t('adminReq.col_phone') }}</th>
-              <th class="text-center" style="width: 12%;">{{ t('adminReq.col_status') }}</th>
+              <th class="text-center" style="width: 15%;">{{ t('adminReq.col_date') }}</th>
+              <th class="text-center" style="width: 15%;">{{ t('adminReq.col_time') }}</th>
+              <th class="text-center" style="width: 35%;">{{ t('adminReq.col_type') }}</th>
+              <th class="text-center" style="width: 20%;">{{ t('adminReq.col_booker') }}</th>
+              <th class="text-center" style="width: 15%;">{{ t('adminReq.col_status') }}</th>
             </tr>
           </thead>
 
           <tbody style="background-color: #f0fafa;">
             <tr v-for="item in paginatedBookings" :key="item.appointment_ID">
-              <td><span class="one-line">{{ formatDate(item.date) }}</span></td>
+              <td class="text-center"><span class="one-line">{{ formatDate(item.date) }}</span></td>
 
-              <td><span class="one-line">{{ item.time }}</span></td>
+              <td class="text-center"><span class="one-line">{{ item.time }}</span></td>
 
-              <td><span class="one-line">{{ displayPlaceName(item) }}</span></td>
-
-              <td>
+              <td class="text-center">
                 <div style="padding: 8px 12px;"><span class="one-line">
                     {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}</span>
                 </div>
               </td>
 
-              <td><span class="one-line">{{ item.full_name || '-' }}</span></td>
-
-              <td><span class="one-line">{{ item.user_email }}</span></td>
-
-              <td><span class="one-line">{{ item.phone_number }}</span></td>
+              <td class="text-center"><span class="one-line">{{ item.full_name || '-' }}</span></td>
 
               <td class="text-center">
                 <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black"

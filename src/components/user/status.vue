@@ -260,7 +260,7 @@ const confirmCancel = async () => {
     }
   } catch (e) {
     console.error('cancel error:', e)
-    alert(t('status.err_cancel_error'))
+    alert(t('status.err_cancel_failed'))
   }
 }
 

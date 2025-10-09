@@ -1,13 +1,13 @@
 {
   "app": {
     "title": "Counselling Queue Booking System",
-    "subtitle": "Counselling Queue Booking"
+    "subtitle": "Counselling Service Center"
   },
   "auth": {
     "signInGoogle": "Sign in with Google",
     "mfuOnly": "Sign in with your MFU account only.",
     "roleMismatch": "Email does not match with your selected role.",
-    "signInFailed": "Sign in failed"
+    "signInFailed": "You do not have permission to access this page"
   },
   "nav": { "home": "Home", "logout": "Logout" },
   "menu": {
@@ -66,7 +66,10 @@
     "err_no_id": "Appointment ID not found",
     "msg_cancelled": "Appointment cancelled",
     "err_cancel_failed": "Cancellation failed",
-    "err_cancel_error": "Cancellation error"
+    "cancel_info_hint": "How to cancel",
+    "cancel_info_title": "How to cancel an appointment",
+    "cancel_info_desc": "If you want to cancel your appointment, you can click the “Pending” button.",
+    "cancel_info_ok": "Close"
   },
   "adminReq": {
     "title": "Consultation Requests",
@@ -118,7 +121,16 @@
     "advice_required": "Please enter advice",
     "advice_subtitle": "Record brief notes for later follow-up.",
     "saved_success": "Saved successfully",
-    "saved_error": "Failed to save"
+    "saved_error": "Failed to save",
+    
+    "detail_title": "Appointment Details",
+    "advice_quick": "Add Advice",
+    "advice_helper": "Write brief notes to support later follow-up.",
+    "click_to_add_advice": "Click to add advice",
+    "advice_owner_only": "Advice is visible/editable by the case owner only",
+    "unspecified": "Unspecified",
+    "summary_label": "Advice Summary",
+    "summary_empty": "No summary yet"
   },
   "dashboard": {
     "title": "Counselling Request Report",

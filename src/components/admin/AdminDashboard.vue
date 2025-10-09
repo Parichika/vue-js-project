@@ -19,11 +19,11 @@
             :label="t('dashboard.end_date')" density="comfortable" variant="outlined" class="date-field"
             @keydown.enter="applyRange" />
 
-          <v-btn color="primary" class="action ml-2" :disabled="!canApply" @click="applyRange">
+          <v-btn color="primary" class="action ml-2" @click="applyRange">
             {{ t('dashboard.filter') }}
           </v-btn>
 
-          <v-btn variant="tonal" color="grey" class="action" @click="clearAll">
+          <v-btn variant="tonal" color="black" class="action" @click="clearAll">
             {{ t('dashboard.clear') }}
           </v-btn>
         </div>
