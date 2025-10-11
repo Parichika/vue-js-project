@@ -47,31 +47,69 @@
         </v-card-title>
 
         <v-card-text class="pb-0">
-          <!-- name TH -->
-          <div class="mb-2 text-medium-emphasis">{{ t('manage.staff.section_th') }}</div>
-          <v-text-field v-model="formStaff.first_name_th" :label="t('manage.staff.first_name_th')" density="comfortable"
-            variant="outlined" prepend-inner-icon="mdi-account" />
-          <v-text-field v-model="formStaff.last_name_th" :label="t('manage.staff.last_name_th')" density="comfortable"
-            variant="outlined" prepend-inner-icon="mdi-account" />
+          <v-form ref="formStaffRef">
 
-          <!-- name EN -->
-          <div class="mt-4 mb-2 text-medium-emphasis">{{ t('manage.staff.section_en') }}</div>
-          <v-text-field v-model="formStaff.first_name_en" :label="t('manage.staff.first_name_en')" density="comfortable"
-            variant="outlined" prepend-inner-icon="mdi-account-outline" />
-          <v-text-field v-model="formStaff.last_name_en" :label="t('manage.staff.last_name_en')" density="comfortable"
-            variant="outlined" prepend-inner-icon="mdi-account-outline" />
+            <!-- name TH -->
+            <div class="mb-2 text-medium-emphasis">{{ t('manage.staff.section_th') }}</div>
+            <v-text-field v-model="formStaff.first_name_th" density="comfortable" variant="outlined"
+              prepend-inner-icon="mdi-account">
+              <template #label>
+                <span style="color:black">{{ t('manage.staff.first_name_th') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
 
-          <v-text-field v-model="formStaff.email" :label="t('manage.staff.email')" variant="outlined"
-            prepend-inner-icon="mdi-email" type="email" density="comfortable" color="teal" />
+            <v-text-field v-model="formStaff.last_name_th" density="comfortable" variant="outlined"
+              prepend-inner-icon="mdi-account">
+              <template #label>
+                <span style="color:black">{{ t('manage.staff.last_name_th') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
 
-          <v-text-field v-model.trim="formStaff.phone" :label="t('manage.staff.phone')" variant="outlined"
-            prepend-inner-icon="mdi-phone" type="tel" inputmode="numeric" pattern="[0-9]*" :maxlength="10" counter
-            @keydown="onPhoneKeydown" @paste="onPhonePaste" />
+            <!-- name EN -->
+            <div class="mt-4 mb-2 text-medium-emphasis">{{ t('manage.staff.section_en') }}</div>
+            <v-text-field v-model="formStaff.first_name_en" density="comfortable" variant="outlined"
+              prepend-inner-icon="mdi-account-outline">
+              <template #label>
+                <span style="color:black">{{ t('manage.staff.first_name_en') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
+
+            <v-text-field v-model="formStaff.last_name_en" density="comfortable" variant="outlined"
+              prepend-inner-icon="mdi-account-outline">
+              <template #label>
+                <span style="color:black">{{ t('manage.staff.last_name_en') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
+
+            <v-text-field v-model="formStaff.email" variant="outlined" prepend-inner-icon="mdi-email" type="email"
+              density="comfortable" color="teal">
+              <template #label>
+                <span style="color:black">{{ t('manage.staff.email') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
+
+            <v-text-field v-model.trim="formStaff.phone" variant="outlined" prepend-inner-icon="mdi-phone" type="tel"
+              inputmode="numeric" pattern="[0-9]*" :maxlength="10" counter @keydown="onPhoneKeydown"
+              @paste="onPhonePaste">
+              <template #label>
+                <span style="color:black">{{ t('manage.staff.phone') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
+
+          </v-form>
         </v-card-text>
 
         <v-card-actions class="justify-end py-2">
           <v-btn variant="text" @click="dialogStaff = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="pink-darken-2" class="text-white" @click="addStaff">{{ t('common.add') }}</v-btn>
+          <v-btn color="pink-darken-2" class="text-white" @click="addStaff" :disabled="!isStaffComplete">
+            {{ t('common.add') }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -115,19 +153,39 @@
         </v-card-title>
 
         <v-card-text class="pb-0">
-          <v-text-field v-model="formPlace.name_th" :label="t('manage.place.name_th')" variant="outlined"
-            density="comfortable" prepend-inner-icon="mdi-map-marker" class="mb-3" color="teal" />
-          <v-text-field v-model="formPlace.name_en" :label="t('manage.place.name_en')" variant="outlined"
-            density="comfortable" prepend-inner-icon="mdi-map-marker-outline" class="mb-3" color="teal" />
+          <v-form ref="formPlaceRef">
 
-          <v-select v-model="formPlace.target" :label="t('manage.place.target_label')" :items="placeTargetItems"
-            item-title="label" item-value="value" prepend-inner-icon="mdi-account-group" variant="outlined"
-            density="comfortable" class="mb-3" color="teal" />
+            <v-text-field v-model="formPlace.name_th" variant="outlined" density="comfortable"
+              prepend-inner-icon="mdi-map-marker" class="mb-3" color="teal" hide-details>
+              <template #label>
+                <span style="color:black">{{ t('manage.place.name_th') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
+
+            <v-text-field v-model="formPlace.name_en" variant="outlined" density="comfortable"
+              prepend-inner-icon="mdi-map-marker-outline" class="mb-3" color="teal" hide-details>
+              <template #label>
+                <span style="color:black">{{ t('manage.place.name_en') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-text-field>
+
+            <v-select v-model="formPlace.target" :label="t('manage.place.target_label')" :items="placeTargetItems"
+              item-title="label" item-value="value" prepend-inner-icon="mdi-account-group" variant="outlined"
+              density="comfortable" class="mb-3" color="teal" hide-details>
+              <template #label>
+                <span style="color:black">{{ t('manage.place.target_label') }}</span>
+                <span style="color:red"> *</span>
+              </template>
+            </v-select>
+
+          </v-form>
         </v-card-text>
 
         <v-card-actions class="justify-end py-2">
           <v-btn variant="text" @click="dialogPlace = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="blue-darken-2" class="text-white" @click="addPlace">
+          <v-btn color="blue-darken-2" class="text-white" @click="addPlace" :disabled="!isPlaceComplete">
             {{ t('common.add') }}
           </v-btn>
         </v-card-actions>
@@ -202,18 +260,15 @@ const fetchStaffList = async () => {
 
 const addStaff = async () => {
   const f = formStaff.value
-  if (!f.email || (!f.first_name_th && !f.first_name_en) || (!f.last_name_th && !f.last_name_en)) {
-    alert(t('manage.staff.err_required'))
-    return
-  }
+  if (!isStaffComplete.value) return
   try {
     await axios.post('http://localhost:3000/api/staff', {
-      first_name_th: f.first_name_th || null,
-      last_name_th: f.last_name_th || null,
-      first_name_en: f.first_name_en || null,
-      last_name_en: f.last_name_en || null,
+      first_name_th: f.first_name_th,
+      last_name_th: f.last_name_th,
+      first_name_en: f.first_name_en,
+      last_name_en: f.last_name_en,
       email: f.email,
-      phone_number: f.phone || null,
+      phone_number: f.phone,
       role: 'staff'
     })
     await fetchStaffList()
@@ -221,7 +276,6 @@ const addStaff = async () => {
     dialogStaff.value = false
   } catch (err) {
     console.error('Failed to add staff:', err)
-    alert(t('manage.staff.err_add'))
   }
 }
 
@@ -232,7 +286,6 @@ const updateStaffStatus = async (staff) => {
     await axios.put('http://localhost:3000/api/staff/status', { email: staff.email, status })
   } catch (err) {
     console.error('Failed to update staff status:', err)
-    alert(t('manage.staff.err_toggle'))
     staff.active = !prev
   }
 }
@@ -314,7 +367,7 @@ function displayPlaceName(p = {}) {
   const th = (p.name_th || p.place_name_th || '').trim();
   const en = (p.name_en || p.place_name_en || '').trim();
   const name = code.startsWith('en') ? (en || th) : (th || en);
-  return name || '-'             // <- เผื่อว่างทั้งคู่
+  return name || '-'
 }
 
 const updatePlaceStatus = async (place) => {
@@ -323,20 +376,16 @@ const updatePlaceStatus = async (place) => {
     await axios.put(`http://localhost:3000/api/places/${place.id}/status`, { status })
   } catch (err) {
     console.error('Failed to update place status:', err)
-    alert(t('manage.place.err_toggle'))
   }
 }
 
 const addPlace = async () => {
   const f = formPlace.value
-  if ((!f.name_th && !f.name_en) || !f.target) {
-    alert(t('manage.place.err_required'))
-    return
-  }
+  if (!isPlaceComplete.value) return
   try {
     const res = await axios.post('http://localhost:3000/api/places', {
-      name_th: f.name_th || '',
-      name_en: f.name_en || '',
+      name_th: f.name_th,
+      name_en: f.name_en,
       target: f.target
     })
     placeList.value.push({
@@ -350,9 +399,27 @@ const addPlace = async () => {
     dialogPlace.value = false
   } catch (err) {
     console.error('Failed to add place:', err)
-    alert(t('manage.place.err_add'))
   }
 }
+
+// ===== เช็กกรอกครบทุกช่องก่อนเปิดปุ่ม =====
+const isStaffComplete = computed(() => {
+  const f = formStaff.value
+  return (
+    !!f.first_name_th &&
+    !!f.last_name_th &&
+    !!f.first_name_en &&
+    !!f.last_name_en &&
+    !!f.email &&
+    typeof f.phone === 'string' &&
+    f.phone.replace(/\D/g, '').length === 10
+  )
+})
+
+const isPlaceComplete = computed(() => {
+  const f = formPlace.value
+  return !!f.name_th && !!f.name_en && !!f.target
+})
 
 onMounted(() => {
   fetchStaffList()

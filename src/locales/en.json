@@ -9,7 +9,10 @@
     "roleMismatch": "Email does not match with your selected role.",
     "signInFailed": "You do not have permission to access this page"
   },
-  "nav": { "home": "Home", "logout": "Logout" },
+  "nav": {
+    "home": "Home",
+    "logout": "Logout"
+  },
   "menu": {
     "booking": "Book Appointment",
     "status": "Booking Status"
@@ -43,7 +46,6 @@
     "specify": "Please specify other",
     "submit": "Submit",
     "privacy_note": "Note: Your information will be kept confidential and used only for appointment scheduling.",
-    "required_alert": "Please fill out all required fields",
     "success_alert": "Appointment booked!"
   },
   "status": {
@@ -62,10 +64,6 @@
     "cancel_confirm_title": "Cancel appointment?",
     "btn_cancel": "Cancel",
     "btn_confirm": "Confirm",
-    "err_not_found": "Booking not found",
-    "err_no_id": "Appointment ID not found",
-    "msg_cancelled": "Appointment cancelled",
-    "err_cancel_failed": "Cancellation failed",
     "cancel_info_hint": "How to cancel",
     "cancel_info_title": "How to cancel an appointment",
     "cancel_info_desc": "If you want to cancel your appointment, you can click the “Pending” button.",
@@ -96,10 +94,6 @@
     "reject_reason_rule": "Please provide a reason",
     "btn_cancel": "Cancel",
     "btn_confirm_reject": "Confirm Reject",
-    "msg_assigned": "Case accepted",
-    "err_assign": "Failed to accept the case",
-    "msg_rejected": "Case rejected",
-    "err_reject": "Failed to reject the case",
     "unspecified": "Unspecified"
   },
   "history": {
@@ -122,7 +116,6 @@
     "advice_subtitle": "Record brief notes for later follow-up.",
     "saved_success": "Saved successfully",
     "saved_error": "Failed to save",
-    
     "detail_title": "Appointment Details",
     "advice_quick": "Add Advice",
     "advice_helper": "Write brief notes to support later follow-up.",
@@ -180,7 +173,6 @@
     "faculty_social_innovation": "School of Social Innovation",
     "faculty_chinese_studies": "School of Chinese Studies",
     "faculty_integrative_medicine": "School of Integrative Medicine",
-    
     "start_date": "Start date",
     "end_date": "End date",
     "filter": "Filter",
@@ -190,7 +182,8 @@
     "on": "On",
     "off": "Off",
     "cancel": "Cancel",
-    "add": "Add"
+    "add": "Add",
+    "required": "This field is required"
   },
   "manage": {
     "staff": {
@@ -203,14 +196,15 @@
       "last_name_en": "Last name (EN)",
       "email": "Email",
       "phone": "Phone number",
-      "err_required": "Please fill name/surname in at least one language and email",
-      "err_add": "Failed to add staff",
       "title": "Staff Management",
       "btn_add": "Add Staff",
       "col_name": "Full name",
       "col_email": "Email",
       "col_phone": "Phone",
-      "col_status": "Account Status"
+      "col_status": "Account Status",
+      "email_invalid": "Invalid email format",
+      "phone_rule": "Enter a 10-digit phone number starting with 0",
+      "name_required_either": "Please fill in both first and last names in at least one language"
     },
     "place": {
       "title": "Place Management",
@@ -225,8 +219,7 @@
       "target_th": "Thai students",
       "target_intl": "International students",
       "err_required": "Please fill in all required fields",
-      "err_add": "Failed to add place",
-      "err_toggle": "Failed to update place status"
+      "name_required": "Please enter the place name in at least one language"
     }
   }
 }

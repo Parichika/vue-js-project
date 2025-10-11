@@ -3,7 +3,6 @@
   <v-app>
     <v-main>
       <v-container>
-        <!-- Info icon มุมขวาบน ของบล็อกตาราง -->
         <!-- Info text + icon มุมขวาบน -->
         <div class="table-header-actions">
           <div class="info-inline clickable" @click="cancelInfoDialog = true">
@@ -29,21 +28,21 @@
 
           <tbody style="background-color: #f0fafa">
             <tr v-for="(item, index) in paginatedBookings" :key="item.appointment_ID">
-              <td class="text-start">{{ item.date }}</td>
-              <td class="text-start"><span class="one-line">{{ item.time }}</span></td>
+              <td class="text-center">{{ item.date }}</td>
+              <td class="text-center"><span class="one-line">{{ item.time }}</span></td>
 
               <!-- ✅ แปลสถานที่ตามภาษา -->
-              <td class="text-start">
+              <td class="text-center">
                 <span class="one-line">{{ displayPlaceName(item) }}</span>
               </td>
 
               <!-- ✅ แปลประเภทบริการตามภาษา -->
-              <td class="text-start">
+              <td class="text-center">
                 <span class="one-line">
                   {{ serviceLabel(item.service_ID, item.service_type, item.other_type) }}</span>
               </td>
 
-              <td class="text-start"><span class="one-line">{{ staffLabel(item) }}</span></td>
+              <td class="text-center"><span class="one-line">{{ staffLabel(item) }}</span></td>
 
               <td>
                 <div class="d-flex align-center justify-center ga-2">
@@ -71,7 +70,7 @@
                 </div>
               </td>
 
-              <td class="text-start">
+              <td class="text-center">
                 <span v-if="item.status === 'rejected' && item.note" class="one-line" :title="item.note">
                   {{ item.note }}
                 </span>
@@ -239,12 +238,10 @@ const openCancelDialog = (pageIndex) => {
 // ยกเลิกโดยไม่ต้องกรอกเหตุผล
 const confirmCancel = async () => {
   if (selectedIndex.value == null || !bookings.value[selectedIndex.value]) {
-    alert(t('status.err_not_found'))
     return
   }
   const item = bookings.value[selectedIndex.value]
   if (!item.appointment_ID) {
-    alert(t('status.err_no_id'))
     return
   }
 
@@ -254,13 +251,10 @@ const confirmCancel = async () => {
     if (okMsg.includes(res?.data?.message)) {
       bookings.value[selectedIndex.value].status = 'cancelled'
       cancelDialog.value = false
-      alert(t('status.msg_cancelled'))
     } else {
-      alert(t('status.err_cancel_failed'))
     }
   } catch (e) {
     console.error('cancel error:', e)
-    alert(t('status.err_cancel_failed'))
   }
 }
 

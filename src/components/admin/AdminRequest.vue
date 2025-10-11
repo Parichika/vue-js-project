@@ -165,11 +165,9 @@ const confirmAssign = async () => {
     await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/assign`, {
       staff_ID
     })
-    alert(t('adminReq.msg_assigned'))
     showDialog.value = false
     fetchAppointments()
   } catch (err) {
-    alert(t('adminReq.err_assign'))
   }
 }
 
@@ -177,19 +175,17 @@ const confirmAssign = async () => {
 const submitReject = async () => {
   try {
     const reason = (rejectReason.value || '').trim()
-    if (!reason) return alert(t('adminReq.reject_reason_rule'))
+    if (!reason) return
     const staff_ID = localStorage.getItem('staff_ID')
     await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/reject`, {
       staff_ID,
       reason,
       reject_reason: reason
     })
-    alert(t('adminReq.msg_rejected'))
     showRejectDialog.value = false
     showDialog.value = false
     await fetchAppointments()
   } catch (err) {
-    alert(t('adminReq.err_reject'))
   }
 }
 

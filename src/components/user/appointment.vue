@@ -149,6 +149,7 @@ import { ref, computed, defineProps, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import dayjs from 'dayjs'
+import { onMounted } from 'vue'
 
 const successDialog = ref(false)
 const submitting = ref(false)
@@ -323,7 +324,6 @@ const submitForm = async () => {
   const result = await formRef.value?.validate()
   const valid = result?.valid ?? result
   if (!valid) {
-    alert(t('appointment.required_alert'))
     await scrollToFirstError()
     submitting.value = false
     return
@@ -350,7 +350,6 @@ const submitForm = async () => {
     const occupied = new Set(check.data || [])
     if (occupied.has(form.value.time)) {
       await fetchOccupiedTimes()   // รีเฟรช UI ให้เห็นเวลาที่ปิด
-      alert(locale.value === 'th' ? 'ช่วงเวลานี้เพิ่งถูกจองไป กรุณาเลือกใหม่' : 'This slot was just booked. Please choose another.')
       submitting.value = false
       return
     }
@@ -359,7 +358,6 @@ const submitForm = async () => {
 
   try {
     await axios.post('http://localhost:3000/api/appointments', payload)
-    // alert(t('appointment.success_alert'))
     successDialog.value = true
     await resetForm()
   } catch (err) {

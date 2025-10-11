@@ -118,7 +118,7 @@
             </div>
 
             <!-- สรุปคำแนะนำ -->
-            <div class="pa-3 info-block">
+            <div class="pa-3 info-block  mt-4">
               <p class="mb-2"><strong>{{ t('history.summary_label') }}:</strong></p>
               <div v-if="canSeeSummary(selectedDetail)">
                 <p v-if="selectedDetail?.appointment_summary && selectedDetail.appointment_summary.trim()">
@@ -347,7 +347,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ขนาด/ตัดคำ */
 .one-line {
   display: inline-block;
   max-width: 100%;
@@ -356,13 +355,11 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-/* ตารางให้ layout คงที่ */
 .history-table {
   table-layout: fixed;
   width: 100%;
 }
 
-/* DIG-style hover: ยกนิด ๆ + เส้นนำสายตาซ้าย + พื้นหลังนุ่ม */
 tbody tr.hoverable-row {
   background-color: #f0fafa;
   transition: background-color .18s ease, transform .12s ease, box-shadow .18s ease, border-left-color .18s ease;
@@ -376,10 +373,17 @@ tbody tr.hoverable-row:focus-within {
   transform: translateY(-1px);
   box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
   border-left-color: #00a8af;
-  /* โทนใกล้ #009199 แต่สว่างขึ้น */
 }
 
-/* Dialog สไตล์เดียวกับที่ต้องการ */
+.hoverable-row {
+  transition: background-color 0.2s ease;
+}
+
+.hoverable-row:hover {
+  background-color: white !important;
+  cursor: pointer;
+}
+
 .dialog-card {
   padding-top: 56px !important;
   position: relative;
