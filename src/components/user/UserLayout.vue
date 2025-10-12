@@ -14,10 +14,12 @@
           </v-btn>
           <div class="d-flex align-center">
             <div class="text-subtitle-1 text-grey-darken-2 me-3">{{ name }}</div>
-            <v-btn icon size="small" class="me-2" color="teal" :variant="locale === 'th' ? 'flat' : 'outlined'" @click="setLang('th')">
+            <v-btn icon size="small" class="me-2" color="teal" :variant="locale === 'th' ? 'flat' : 'outlined'"
+              @click="setLang('th')">
               <span class="text-button font-weight-bold">TH</span>
             </v-btn>
-            <v-btn icon size="small" color="teal" :variant="locale === 'en' ? 'flat' : 'outlined'" @click="setLang('en')">
+            <v-btn icon size="small" color="teal" :variant="locale === 'en' ? 'flat' : 'outlined'"
+              @click="setLang('en')">
               <span class="text-button font-weight-bold">EN</span>
             </v-btn>
           </div>
@@ -26,23 +28,15 @@
 
       <template #extension>
         <v-row no-gutters class="justify-center" style="background-color: #009199">
-          <v-btn
-            class="ma-2 text-subtitle-1"
-            :color="activeMenu === 'booking' ? 'white' : '#009199'"
-            :variant="activeMenu === 'booking' ? 'flat' : 'text'"
-            rounded="sm" style="font-weight: bold; color: white"
-            @click="activeMenu = 'booking'"
-          >
+          <v-btn class="ma-2 text-subtitle-1" :color="activeMenu === 'booking' ? 'white' : '#009199'"
+            :variant="activeMenu === 'booking' ? 'flat' : 'text'" rounded="sm" style="font-weight: bold; color: white"
+            @click="go('booking')">
             {{ t('menu.booking') }}
           </v-btn>
 
-          <v-btn
-            class="ma-2 text-subtitle-1"
-            :color="activeMenu === 'status' ? 'white' : '#009199'"
-            :variant="activeMenu === 'status' ? 'flat' : 'text'"
-            rounded="sm" style="font-weight: bold; color: white"
-            @click="activeMenu = 'status'"
-          >
+          <v-btn class="ma-2 text-subtitle-1" :color="activeMenu === 'status' ? 'white' : '#009199'"
+            :variant="activeMenu === 'status' ? 'flat' : 'text'" rounded="sm" style="font-weight: bold; color: white"
+            @click="go('status')">
             {{ t('menu.status') }}
           </v-btn>
         </v-row>
@@ -50,12 +44,7 @@
     </v-app-bar>
 
     <v-main>
-      <component
-        :is="activeMenuComponent"
-        :lang="locale"
-        :email="userEmail"
-        :key="locale + '-' + activeMenu"
-      />
+      <component :is="activeMenuComponent" :lang="locale" :email="userEmail" :key="locale + '-' + activeMenu" />
     </v-main>
 
     <!-- Footer (คงข้อความเดิมแบบสแตติก) -->
@@ -71,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import BookingForm from './appointment.vue'
@@ -106,10 +95,23 @@ const setLang = (l) => {
 const activeMenu = ref('booking')
 const activeMenuComponent = computed(() => (activeMenu.value === 'booking' ? BookingForm : BookingStatus))
 
+// helper: เลื่อนขึ้นบนสุด
+const scrollTopNow = (behavior = 'smooth') => {
+  const main = document.querySelector('.v-main') || document.scrollingElement || document.documentElement
+  main?.scrollTo?.({ top: 0, behavior })
+  window.scrollTo({ top: 0, behavior })
+}
+
+// สลับเมนู + เลื่อนขึ้นบนสุด
+const go = async (menu) => {
+  activeMenu.value = menu
+  await nextTick()
+  scrollTopNow('smooth')
+}
+
 // ออกจากระบบ
 const logout = () => {
   localStorage.clear()
   router.push({ name: 'SignIn' })
 }
 </script>
-

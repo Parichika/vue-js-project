@@ -149,7 +149,6 @@ import { ref, computed, defineProps, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import dayjs from 'dayjs'
-import { onMounted } from 'vue'
 
 const successDialog = ref(false)
 const submitting = ref(false)

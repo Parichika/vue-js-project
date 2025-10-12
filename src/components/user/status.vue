@@ -197,7 +197,15 @@ const fetchBookings = async () => {
     console.error('Error fetching bookings:', error)
   }
 }
-onMounted(fetchBookings)
+
+onMounted(() => {
+  fetchBookings()
+  requestAnimationFrame(() => {
+    const main = document.querySelector('.v-main') || document.scrollingElement || document.documentElement
+    main?.scrollTo?.({ top: 0, behavior: 'auto' })
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  })
+})
 
 function staffLabel(item) {
   const th = [item.first_name_th, item.last_name_th].filter(Boolean).join(' ').trim()
