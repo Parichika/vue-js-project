@@ -169,7 +169,7 @@ const bookings = ref([])
 // ดึงข้อมูลการจอง
 const fetchBookings = async () => {
   try {
-    const response = await axios.get('/api/appointments/status', {
+    const response = await axios.get('/api/user/appointments/status', {
       params: { email: props.email }
     })
     bookings.value = response.data.map((item) => {
@@ -254,7 +254,7 @@ const confirmCancel = async () => {
   }
 
   try {
-    const res = await axios.put(`/api/appointments/${item.appointment_ID}/cancel`)
+    const res = await axios.put(`/api/user/appointments/cancel/${item.appointment_ID}`)
     const okMsg = ['Appointment cancelled and reason saved', 'Appointment cancelled']
     if (okMsg.includes(res?.data?.message)) {
       bookings.value[selectedIndex.value].status = 'cancelled'

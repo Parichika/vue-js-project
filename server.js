@@ -31,8 +31,8 @@ db.connect((err) => {
 /* =========================
  * สร้างการจอง (POST)
  * ========================= */
-app.post("/api/appointments", (req, res) => {
-  console.log("POST /api/appointments called");
+app.post("/api/user/appointments", (req, res) => {
+  console.log("POST /api/user/appointments called");
   const {
     full_name,
     date,
@@ -160,7 +160,7 @@ function saveAppointment(
 /* =========================
  * เวลาที่ถูกจองแล้ว (GET)
  * ========================= */
-app.get("/api/appointments/occupied", (req, res) => {
+app.get("/api/user/appointments/occupied", (req, res) => {
   const { date, place_ID } = req.query;
   if (!date || !place_ID) {
     return res.status(400).json({ error: "Missing date or place_ID" });
@@ -181,7 +181,7 @@ app.get("/api/appointments/occupied", (req, res) => {
 /* =========================
  * staff รับเคส / ปฏิเสธเคส
  * ========================= */
-app.put("/api/appointments/:id/assign", (req, res) => {
+app.put("/api/admin/appointments/assign/:id", (req, res) => {
   const appointmentID = req.params.id;
   const { staff_ID } = req.body;
 
@@ -197,7 +197,7 @@ app.put("/api/appointments/:id/assign", (req, res) => {
   );
 });
 
-app.put("/api/appointments/:id/reject", (req, res) => {
+app.put("/api/admin/appointments/reject/:id", (req, res) => {
   const appointmentID = req.params.id;
   // รองรับทั้งสองชื่อ เพื่อกันพลาดจาก front ที่ส่งมาไม่ตรง
   const staff_ID = req.body.staff_ID;
@@ -238,7 +238,7 @@ app.put("/api/appointments/:id/reject", (req, res) => {
 /* =========================
  * รายการจอง (staff ดู pending)
  * ========================= */
-app.get("/api/appointments", (req, res) => {
+app.get("/api/admin/appointments", (req, res) => {
   const sql = `
     SELECT 
       a.appointment_ID,
@@ -270,7 +270,7 @@ app.get("/api/appointments", (req, res) => {
 /* =========================
  * สถานะการจองของ user
  * ========================= */
-app.get("/api/appointments/status", (req, res) => {
+app.get("/api/user/appointments/status", (req, res) => {
   const { email } = req.query;
   if (!email) {
     return res.status(400).json({ error: "Missing email" });
@@ -310,7 +310,7 @@ app.get("/api/appointments/status", (req, res) => {
 /* =========================
  * ยกเลิกการจอง (ไม่เก็บเหตุผล)
  * ========================= */
-app.put("/api/appointments/:id/cancel", (req, res) => {
+app.put("/api/user/appointments/cancel/:id", (req, res) => {
   const appointmentId = Number(req.params.id);
 
   if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
@@ -338,7 +338,7 @@ app.put("/api/appointments/:id/cancel", (req, res) => {
 /* =========================
  *  ประวัติ (approved / rejected / completed / cancelled)
  * ========================= */
-app.get("/api/history", (req, res) => {
+app.get("/api/admin/history", (req, res) => {
   const { staff_ID, role } = req.query;
   if (!role) return res.status(400).json({ error: "Missing role" });
 
@@ -411,7 +411,7 @@ app.get("/api/history", (req, res) => {
 /* =========================
  *  ปิดเคส + บันทึกสรุปคำแนะนำ (เก็บในตาราง appointment)
  * ========================= */
-app.post("/api/appointments/complete", (req, res) => {
+app.post("/api/admin/appointments/complete", (req, res) => {
   const { appointment_ID, advice_detail, staff_ID } = req.body;
 
   if (!appointment_ID || !advice_detail || !staff_ID) {
@@ -443,7 +443,7 @@ app.post("/api/appointments/complete", (req, res) => {
 /* =========================
  *  Dashboard Summary
  * ========================= */
-app.get("/api/dashboard", (req, res) => {
+app.get("/api/admin/dashboard", (req, res) => {
   const { period, startDate: qsStart, endDate: qsEnd } = req.query;
 
   let whereClause = "";
@@ -636,7 +636,7 @@ app.get("/api/dashboard", (req, res) => {
 /* =========================
  *  Place APIs
  * ========================= */
-app.put("/api/places/:id/status", (req, res) => {
+app.put("/api/admin/places/status/:id", (req, res) => {
   const placeId = req.params.id;
   const { status } = req.body;
 
@@ -658,7 +658,7 @@ app.put("/api/places/:id/status", (req, res) => {
 });
 
 // GET ดึง staff ทั้งหมด (ส่งชื่อ 2 ภาษาออกไป)
-app.get("/api/staff", (req, res) => {
+app.get("/api/admin/staff", (req, res) => {
   const sql = `
     SELECT staff_ID, email, phone_number, role, staff_status,
            first_name_th, last_name_th, first_name_en, last_name_en
@@ -682,7 +682,7 @@ app.get("/api/staff", (req, res) => {
 
 // API Staff เปิดปิดเพิ่ม
 // POST เพิ่ม staff ใหม่ (รับชื่อ 2 ภาษา)
-app.post("/api/staff", (req, res) => {
+app.post("/api/admin/staff", (req, res) => {
   const {
     first_name_th,
     last_name_th,
@@ -723,7 +723,7 @@ app.post("/api/staff", (req, res) => {
 });
 
 //อัปเดตสถานะ staff
-app.put("/api/staff/status", (req, res) => {
+app.put("/api/admin/staff/status", (req, res) => {
   const { email, status } = req.body;
 
   if (!email || !status) {
@@ -744,7 +744,7 @@ app.put("/api/staff/status", (req, res) => {
   );
 });
 
-app.get("/api/places", (req, res) => {
+app.get("/api/admin/places", (req, res) => {
   db.query("SELECT * FROM place", (err, results) => {
     if (err) return res.status(500).json({ error: err });
     const formatted = results.map((p) => ({
@@ -758,7 +758,7 @@ app.get("/api/places", (req, res) => {
   });
 });
 
-app.post("/api/places", (req, res) => {
+app.post("/api/admin/places", (req, res) => {
   const { name_th, name_en, target } = req.body;
 
   if (!name_th && !name_en) {
@@ -793,7 +793,7 @@ app.post("/api/places", (req, res) => {
 /* =========================
  *  Search
  * ========================= */
-app.get("/api/search", (req, res) => {
+app.get("/api/admin/search", (req, res) => {
   const keyword = req.query.q;
   if (!keyword) {
     return res.status(400).json({ error: "Missing search keyword" });

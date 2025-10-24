@@ -232,7 +232,7 @@ const fetchOccupiedTimes = async () => {
   if (!form.value.date || !form.value.channel) { occupiedTimes.value = []; return }
   loadingOccupied.value = true
   try {
-    const res = await axios.get('http://localhost:3000/api/appointments/occupied', {
+    const res = await axios.get('http://localhost:3000/api/user/appointments/occupied', {
       params: { date: form.value.date, place_ID: form.value.channel }
     })
     occupiedTimes.value = res.data || []
@@ -269,7 +269,7 @@ const today = computed(() => dayjs().format('YYYY-MM-DD'))
 /** places + default channel */
 const fetchPlaces = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/places')
+    const res = await axios.get('http://localhost:3000/api/admin/places')
     allPlaces.value = res.data || []
     if (!form.value.channel && form.value.nationality) {
       const firstOpenPlace = allPlaces.value.find(
@@ -343,7 +343,7 @@ const submitForm = async () => {
 
   // check ยังว่างไหมก่อนกดจองจริง
   try {
-    const check = await axios.get('http://localhost:3000/api/appointments/occupied', {
+    const check = await axios.get('http://localhost:3000/api/admin/appointments/occupied', {
       params: { date: form.value.date, place_ID: form.value.channel }
     })
     const occupied = new Set(check.data || [])
@@ -356,7 +356,7 @@ const submitForm = async () => {
   }
 
   try {
-    await axios.post('http://localhost:3000/api/appointments', payload)
+    await axios.post('http://localhost:3000/api/user/appointments', payload)
     successDialog.value = true
     await resetForm()
   } catch (err) {

@@ -242,7 +242,7 @@ function staffDisplayName(s) {
 
 const fetchStaffList = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/staff')
+    const res = await axios.get('http://localhost:3000/api/admin/staff')
     staffList.value = res.data.map(s => ({
       email: s.email,
       phone: s.phone || s.phone_number || '-',
@@ -262,7 +262,7 @@ const addStaff = async () => {
   const f = formStaff.value
   if (!isStaffComplete.value) return
   try {
-    await axios.post('http://localhost:3000/api/staff', {
+    await axios.post('http://localhost:3000/api/admin/staff', {
       first_name_th: f.first_name_th,
       last_name_th: f.last_name_th,
       first_name_en: f.first_name_en,
@@ -283,7 +283,7 @@ const updateStaffStatus = async (staff) => {
   const prev = staff.active
   try {
     const status = staff.active ? 'active' : 'inactive'
-    await axios.put('http://localhost:3000/api/staff/status', { email: staff.email, status })
+    await axios.put('http://localhost:3000/api/admin/staff/status', { email: staff.email, status })
   } catch (err) {
     console.error('Failed to update staff status:', err)
     staff.active = !prev
@@ -340,7 +340,7 @@ const placeList = ref([])
 
 const fetchPlaceList = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/places')
+    const res = await axios.get('http://localhost:3000/api/admin/places')
     placeList.value = res.data.map(p => ({
       id: p.place_ID,
       // key ใหม่จาก backend
@@ -373,7 +373,7 @@ function displayPlaceName(p = {}) {
 const updatePlaceStatus = async (place) => {
   try {
     const status = place.active ? 'open' : 'closed'
-    await axios.put(`http://localhost:3000/api/places/${place.id}/status`, { status })
+    await axios.put(`http://localhost:3000/api/admin/places/status/${place.id}`, { status })
   } catch (err) {
     console.error('Failed to update place status:', err)
   }
@@ -383,7 +383,7 @@ const addPlace = async () => {
   const f = formPlace.value
   if (!isPlaceComplete.value) return
   try {
-    const res = await axios.post('http://localhost:3000/api/places', {
+    const res = await axios.post('http://localhost:3000/api/admin/places', {
       name_th: f.name_th,
       name_en: f.name_en,
       target: f.target

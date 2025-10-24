@@ -163,7 +163,7 @@ const dashboardData = ref({
 // ---- API ----
 const loadDashboardData = async (startDate, endDate) => {
   try {
-    const res = await axios.get('http://localhost:3000/api/dashboard', {
+    const res = await axios.get('http://localhost:3000/api/admin/dashboard', {
       params: { startDate: startDate ?? null, endDate: endDate ?? null, _: Date.now() },
       headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
     })

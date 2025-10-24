@@ -162,7 +162,7 @@ const closeRejectDialog = () => { showRejectDialog.value = false }
 const confirmAssign = async () => {
   try {
     const staff_ID = localStorage.getItem('staff_ID')
-    await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/assign`, {
+    await axios.put(`http://localhost:3000/api/admin/appointments/assign/${selectedAppointment.value.appointment_ID}`, {
       staff_ID
     })
     showDialog.value = false
@@ -177,7 +177,7 @@ const submitReject = async () => {
     const reason = (rejectReason.value || '').trim()
     if (!reason) return
     const staff_ID = localStorage.getItem('staff_ID')
-    await axios.put(`http://localhost:3000/api/appointments/${selectedAppointment.value.appointment_ID}/reject`, {
+    await axios.put(`http://localhost:3000/api/admin/appointments/reject/${selectedAppointment.value.appointment_ID}`, {
       staff_ID,
       reason,
       reject_reason: reason
@@ -212,7 +212,7 @@ const formatDate = (dateString) => {
 
 // โหลดข้อมูล
 const fetchAppointments = async () => {
-  const res = await axios.get('http://localhost:3000/api/appointments')
+  const res = await axios.get('http://localhost:3000/api/admin/appointments')
   appointments.value = res.data
 }
 

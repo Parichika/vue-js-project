@@ -317,7 +317,7 @@ async function submitCompletion() {
   }
   saving.value = true
   try {
-    await axios.post('http://localhost:3000/api/appointments/complete', {
+    await axios.post('http://localhost:3000/api/admin/appointments/complete', {
       appointment_ID: selectedItem.value.appointment_ID,
       advice_detail: adviceDetail.value.trim(),
       staff_ID: staffIdNum,
@@ -338,7 +338,7 @@ async function submitCompletion() {
 onMounted(async () => {
   try {
     const params = { role, staff_ID: staffIdNum }
-    const res = await axios.get('http://localhost:3000/api/history', { params })
+    const res = await axios.get('http://localhost:3000/api/admin/history', { params })
     staffBookings.value = res.data
   } catch (error) {
     console.error('Error loading appointments history:', error)
