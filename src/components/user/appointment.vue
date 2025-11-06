@@ -343,7 +343,7 @@ const submitForm = async () => {
 
   // check ยังว่างไหมก่อนกดจองจริง
   try {
-    const check = await axios.get('http://localhost:3000/api/admin/appointments/occupied', {
+    const check = await axios.get('http://localhost:3000/api/user/appointments/occupied', {
       params: { date: form.value.date, place_ID: form.value.channel }
     })
     const occupied = new Set(check.data || [])

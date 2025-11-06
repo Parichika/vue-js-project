@@ -75,7 +75,7 @@
     "col_time": "Time",
     "col_location": "Location",
     "col_type": "Type",
-    "col_booker": "Booker",
+    "col_booker": "Name",
     "col_email": "Email",
     "col_phone": "Phone",
     "col_status": "Status",

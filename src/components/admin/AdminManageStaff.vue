@@ -262,7 +262,7 @@ const addStaff = async () => {
   const f = formStaff.value
   if (!isStaffComplete.value) return
   try {
-    await axios.post('http://localhost:3000/api/admin/staff', {
+    await axios.post('http://localhost:3000/api/admin/staff/add', {
       first_name_th: f.first_name_th,
       last_name_th: f.last_name_th,
       first_name_en: f.first_name_en,
@@ -383,7 +383,7 @@ const addPlace = async () => {
   const f = formPlace.value
   if (!isPlaceComplete.value) return
   try {
-    const res = await axios.post('http://localhost:3000/api/admin/places', {
+    const res = await axios.post('http://localhost:3000/api/admin/places/add', {
       name_th: f.name_th,
       name_en: f.name_en,
       target: f.target
