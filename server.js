@@ -2,10 +2,13 @@ const express = require("express");
 const mysql = require("mysql");
 const cors = require("cors");
 const dayjs = require("dayjs");
+const user = require('./server/user')
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/user', user)
 
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
@@ -26,156 +29,6 @@ db.connect((err) => {
   } else {
     console.log("Connected to MySQL");
   }
-});
-
-/* =========================
- * สร้างการจอง (POST)
- * ========================= */
-app.post("/api/user/appointments", (req, res) => {
-  console.log("POST /api/user/appointments called");
-  const {
-    full_name,
-    date,
-    time,
-    phone,
-    serviceType,
-    otherService,
-    place_ID,
-    nationality,
-    email,
-  } = req.body;
-
-  if (!full_name || !email || !date || !time || !place_ID || !phone) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  // ยืนยันว่า place_ID มีอยู่จริง
-  db.query(
-    "SELECT 1 FROM place WHERE place_ID = ? LIMIT 1",
-    [place_ID],
-    (err, ok) => {
-      if (err) return res.status(500).json({ error: "DB error" });
-      if (ok.length === 0)
-        return res.status(404).json({ error: "ไม่พบสถานที่" });
-
-      // map serviceType -> service_ID
-      const serviceMap = { life: 1, study: 2, emotion: 3, other: 4 };
-      const service_ID = serviceMap[serviceType] || null;
-
-      // ปล่อยให้ saveAppointment ตัดสินใจ (atomic) ว่าว่างหรือไม่
-      saveAppointment(
-        {
-          email,
-          full_name,
-          date,
-          time,
-          phone,
-          service_ID,
-          otherService,
-          place_ID,
-          nationality,
-        },
-        res
-      );
-    }
-  );
-});
-
-// Dashboard Year ชั้นปี จากเมล
-// ดึง 10 หลักแรกที่เป็นตัวเลขจากอีเมล ---
-function deriveStudentIdFromEmail(email = "") {
-  if (!email) return null;
-  const local = String(email).split("@")[0];
-  const digits = (local.match(/\d+/g) || []).join("");
-  return digits.length >= 10 ? digits.slice(0, 10) : null;
-}
-
-/* =========================
- * บันทึกการจอง (ฟังก์ชัน)
- * ========================= */
-function saveAppointment(
-  {
-    date,
-    time,
-    phone,
-    service_ID,
-    otherService,
-    place_ID,
-    nationality,
-    email,
-    full_name,
-  },
-  res
-) {
-  const student_id = deriveStudentIdFromEmail(email);
-
-  const sql = `
-    INSERT INTO appointment (
-      user_email, student_id, full_name, phone_number,
-      date, time, staff_ID, service_ID, other_type,
-      place_ID, nationality, status, appointment_summary
-    )
-    SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?
-    FROM DUAL
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM appointment
-      WHERE date = ? AND time = ? AND place_ID = ?
-        AND status NOT IN ('rejected','cancelled')
-    )
-  `;
-
-  const values = [
-    email,
-    student_id,
-    full_name,
-    phone,
-    date,
-    time,
-    null,
-    service_ID,
-    otherService || "",
-    place_ID,
-    nationality,
-    "pending",
-    "",
-    date,
-    time,
-    place_ID,
-  ];
-
-  db.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Insert error:", err);
-      return res.status(500).json({ error: "DB error" });
-    }
-    if (result.affectedRows === 0) {
-      // มีคนจองตัดหน้าพอดี
-      return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
-    }
-    res.json({ message: "จองสำเร็จ", appointmentID: result.insertId });
-  });
-}
-
-/* =========================
- * เวลาที่ถูกจองแล้ว (GET)
- * ========================= */
-app.get("/api/user/appointments/occupied", (req, res) => {
-  const { date, place_ID } = req.query;
-  if (!date || !place_ID) {
-    return res.status(400).json({ error: "Missing date or place_ID" });
-  }
-
-  const sql = `
-    SELECT DISTINCT time
-    FROM appointment
-    WHERE date = ? AND place_ID = ?
-      AND status NOT IN ('rejected','cancelled')
-  `;
-  db.query(sql, [date, place_ID], (err, rows) => {
-    if (err) return res.status(500).json({ error: "DB error" });
-    res.json(rows.map((r) => r.time));
-  });
 });
 
 /* =========================
