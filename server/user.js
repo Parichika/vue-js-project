@@ -1,7 +1,10 @@
-const express = require('express');
+const express = require("express");
+const { verifyToken } = require("./auth");
 
 module.exports = (db) => {
   const router = express.Router();
+
+  router.use(verifyToken);
 
   /* =========================
    *  สร้างการจอง (POST)
@@ -19,7 +22,7 @@ module.exports = (db) => {
       otherService,
       nationality,
       email,
-      place_ID // ✅ รับตรงจาก frontend
+      place_ID, // ✅ รับตรงจาก frontend
     } = req.body;
 
     // ตรวจสอบข้อมูลที่จำเป็น
@@ -71,7 +74,7 @@ module.exports = (db) => {
           place_ID,
           nationality,
           "pending",
-          ""
+          "",
         ];
 
         db.query(sql, values, (err2, result) => {
@@ -83,6 +86,27 @@ module.exports = (db) => {
         });
       }
     );
+  });
+
+  /* =========================
+   *  สถานที่ (Place APIs)
+   * ========================= */
+  router.get("/places", (req, res) => {
+    const sql = `
+    SELECT place_ID, place_name_th, place_name_en, target_group, place_status
+    FROM place
+  `;
+    db.query(sql, (err, rows) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      const formatted = rows.map((p) => ({
+        place_ID: p.place_ID,
+        name_th: p.place_name_th,
+        name_en: p.place_name_en,
+        target_group: p.target_group,
+        place_status: p.place_status,
+      }));
+      res.json(formatted);
+    });
   });
 
   /* =========================
@@ -153,32 +177,34 @@ module.exports = (db) => {
   /* =========================
    *  ยกเลิกการจอง
    * ========================= */
- router.put("/appointments/cancel/:id", (req, res) => {
-  const appointmentId = Number(req.params.id);
+  router.put("/appointments/cancel/:id", (req, res) => {
+    const appointmentId = Number(req.params.id);
 
-  if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
-    return res.status(400).json({ error: "appointment_ID ไม่ถูกต้อง" });
-  }
+    if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
+      return res.status(400).json({ error: "appointment_ID ไม่ถูกต้อง" });
+    }
 
-  const updateSql = `
+    const updateSql = `
     UPDATE appointment
     SET status = 'cancelled'
     WHERE appointment_ID = ?
   `;
 
-  db.query(updateSql, [appointmentId], (err, result) => {
-    if (err) {
-      console.error("Error during cancellation update:", err);
-      return res.status(500).json({ error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
-    }
+    db.query(updateSql, [appointmentId], (err, result) => {
+      if (err) {
+        console.error("Error during cancellation update:", err);
+        return res
+          .status(500)
+          .json({ error: "เกิดข้อผิดพลาดในการอัปเดตสถานะ" });
+      }
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "ไม่พบนัดหมายที่ต้องการยกเลิก" });
-    }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "ไม่พบนัดหมายที่ต้องการยกเลิก" });
+      }
 
-    res.json({ message: "Appointment cancelled" });
+      res.json({ message: "Appointment cancelled" });
+    });
   });
-});
 
   return router;
 };

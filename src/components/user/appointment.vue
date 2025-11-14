@@ -148,6 +148,9 @@
 import { ref, computed, defineProps, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
+
+axios.defaults.withCredentials = true;
+
 import dayjs from 'dayjs'
 
 const successDialog = ref(false)
@@ -232,8 +235,9 @@ const fetchOccupiedTimes = async () => {
   if (!form.value.date || !form.value.channel) { occupiedTimes.value = []; return }
   loadingOccupied.value = true
   try {
-    const res = await axios.get('http://localhost:3000/api/user/appointments/occupied', {
-      params: { date: form.value.date, place_ID: form.value.channel }
+    const ymd = dayjs(form.value.date).format('YYYY-MM-DD');
+    const res = await axios.get('/api/user/appointments/occupied', {
+      params: { date: ymd, place_ID: form.value.channel }
     })
     occupiedTimes.value = res.data || []
     // ถ้าผู้ใช้เลือกช่วงเวลาที่ถูกจองไปแล้ว → ล้างค่าออก
@@ -269,7 +273,7 @@ const today = computed(() => dayjs().format('YYYY-MM-DD'))
 /** places + default channel */
 const fetchPlaces = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/admin/places')
+    const res = await axios.get('/api/user/places')
     allPlaces.value = res.data || []
     if (!form.value.channel && form.value.nationality) {
       const firstOpenPlace = allPlaces.value.find(
@@ -343,8 +347,9 @@ const submitForm = async () => {
 
   // check ยังว่างไหมก่อนกดจองจริง
   try {
-    const check = await axios.get('http://localhost:3000/api/user/appointments/occupied', {
-      params: { date: form.value.date, place_ID: form.value.channel }
+    const ymd = dayjs(form.value.date).format('YYYY-MM-DD');
+    const check = await axios.get('/api/user/appointments/occupied', {
+      params: { date: ymd, place_ID: form.value.channel }
     })
     const occupied = new Set(check.data || [])
     if (occupied.has(form.value.time)) {
@@ -356,7 +361,7 @@ const submitForm = async () => {
   }
 
   try {
-    await axios.post('http://localhost:3000/api/user/appointments', payload)
+    await axios.post('/api/user/appointments', payload)
     successDialog.value = true
     await resetForm()
   } catch (err) {

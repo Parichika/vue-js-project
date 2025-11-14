@@ -138,7 +138,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 
-const { t, locale } = useI18n() // ใช้ locale ปัจจุบันจากระบบ i18n ทั่วทั้งแอป
+axios.defaults.withCredentials = true
+
+const { t, locale } = useI18n()
 
 const page = ref(1)
 const appointments = ref([])
@@ -147,7 +149,6 @@ const selectedAppointment = ref(null)
 const showRejectDialog = ref(false)
 const rejectReason = ref('')
 
-// เปิด Dialog รายการ
 const openAssignDialog = (appointment) => {
   selectedAppointment.value = appointment
   showDialog.value = true
@@ -160,60 +161,55 @@ const closeRejectDialog = () => { showRejectDialog.value = false }
 
 // รับเคส
 const confirmAssign = async () => {
+  if (!selectedAppointment.value?.appointment_ID) return
   try {
-    const staff_ID = localStorage.getItem('staff_ID')
-    await axios.put(`http://localhost:3000/api/admin/appointments/assign/${selectedAppointment.value.appointment_ID}`, {
-      staff_ID
-    })
+    const apptId = selectedAppointment.value.appointment_ID
+    await axios.put(
+      `http://localhost:3000/api/admin/appointments/assign/${apptId}`,
+      null,
+      { withCredentials: true }
+    )
     showDialog.value = false
-    fetchAppointments()
+    await fetchAppointments()
   } catch (err) {
+    alert(err?.response?.data?.error || 'Assign failed')
   }
 }
 
 // ปฏิเสธเคส + เหตุผล
 const submitReject = async () => {
+  const reason = (rejectReason.value || '').trim()
+  if (!reason || !selectedAppointment.value?.appointment_ID) return
   try {
-    const reason = (rejectReason.value || '').trim()
-    if (!reason) return
-    const staff_ID = localStorage.getItem('staff_ID')
-    await axios.put(`http://localhost:3000/api/admin/appointments/reject/${selectedAppointment.value.appointment_ID}`, {
-      staff_ID,
-      reason,
-      reject_reason: reason
-    })
+    const apptId = selectedAppointment.value.appointment_ID
+    await axios.put(
+      `http://localhost:3000/api/admin/appointments/reject/${apptId}`,
+      { reject_reason: reason },
+      { withCredentials: true }
+    )
     showRejectDialog.value = false
     showDialog.value = false
     await fetchAppointments()
   } catch (err) {
+    alert(err?.response?.data?.error || 'Reject failed')
   }
 }
 
-// วันที่ตาม locale ปัจจุบัน
+// วันที่ตาม locale
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const d = new Date(dateString)
   if (isNaN(d.getTime())) return '-'
-
-  if (locale.value === 'th') {
-    // แสดงเป็น วัน/เดือน/พ.ศ.
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const year = d.getFullYear() + 543
-    return `${day}/${month}/${year}`
-  } else {
-    // แสดงเป็น วัน/เดือน/ค.ศ.
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const year = d.getFullYear()
-    return `${day}/${month}/${year}`
-  }
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = locale.value === 'th' ? d.getFullYear() + 543 : d.getFullYear()
+  return `${day}/${month}/${year}`
 }
 
 // โหลดข้อมูล
 const fetchAppointments = async () => {
-  const res = await axios.get('http://localhost:3000/api/admin/appointments')
-  appointments.value = res.data
+  const res = await axios.get('http://localhost:3000/api/admin/appointments', { withCredentials: true })
+  appointments.value = res.data || []
 }
 
 // เพจิเนชัน
@@ -231,16 +227,14 @@ function displayPlaceName(p = {}) {
   const th = (p.place_name_th || p.name_th || '').trim();
   const en = (p.place_name_en || p.name_en || '').trim();
   const name = code.startsWith('en') ? (en || th) : (th || en);
-  return name || '-'             // <- เผื่อว่างทั้งคู่
+  return name || '-'
 }
 
-// ประเภทบริการ: ใช้รหัสก่อน ถ้าไม่มีลองเดาจากข้อความ
 function serviceLabel(serviceId, serviceType, otherType) {
   if (serviceId === 1) return t('appointment.life')
   if (serviceId === 2) return t('appointment.study')
   if (serviceId === 3) return t('appointment.emotion')
   if (serviceId === 4) return otherType || t('appointment.other')
-
   const norm = (serviceType || '').toLowerCase()
   if (!norm) return t('adminReq.unspecified')
   if (/(ชีวิต|ปรับตัว|life|adjustment)/.test(norm)) return t('appointment.life')

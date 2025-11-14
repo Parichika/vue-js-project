@@ -201,16 +201,16 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 
+axios.defaults.withCredentials = true
+
 const { t, locale } = useI18n()
 
-const role = localStorage.getItem('role') || ''
-const staffIdNum = Number(localStorage.getItem('staff_ID')) || 0
+const staffIdNum = ref(0)
 
 const page = ref(1)
 const staffBookings = ref([])
 const search = ref('')
 
-/** Dialog states */
 const detailDialog = ref(false)
 const selectedDetail = ref(null)
 
@@ -222,7 +222,6 @@ const snack = ref({ show: false, msg: '' })
 
 watch(search, () => { page.value = 1 })
 
-/* ===== Utils ===== */
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const d = new Date(dateString)
@@ -231,9 +230,7 @@ const formatDate = (dateString) => {
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const thYear = d.getFullYear() + 543
   const enYear = d.getFullYear()
-  return locale.value === 'th'
-    ? `${day}/${month}/${thYear}`
-    : `${day}/${month}/${enYear}`
+  return locale.value === 'th' ? `${day}/${month}/${thYear}` : `${day}/${month}/${enYear}`
 }
 
 function serviceLabel(serviceId, serviceType, otherType) {
@@ -258,14 +255,12 @@ function displayPlaceName(p = {}) {
   return name || '-'
 }
 
-/* ===== Data transform ===== */
 const translatedBookings = computed(() =>
   staffBookings.value.filter(item =>
     ['approved', 'rejected', 'completed', 'cancelled'].includes(item.status)
   )
 )
 
-/** ค้นหา: ชื่อ, อีเมล, เบอร์, สถานที่, ประเภท, สถานะ, รหัสนักศึกษาหน้าอีเมล */
 const filteredBookings = computed(() => {
   const keyword = (search.value || '').toLowerCase().trim()
   if (!keyword) return translatedBookings.value
@@ -281,20 +276,17 @@ const filteredBookings = computed(() => {
   })
 })
 
-/** เพจิเนชัน */
 const paginatedBookings = computed(() => {
   const start = (page.value - 1) * 5
   return filteredBookings.value.slice(start, start + 5)
 })
 const pageCount = computed(() => Math.ceil(filteredBookings.value.length / 5))
 
-/* ===== Row Detail Dialog ===== */
 function openDetailDialog(item) {
   selectedDetail.value = item
   detailDialog.value = true
 }
 
-/* ===== Advice Dialog (approved -> completed) ===== */
 function openAdviceDialog(item) {
   selectedItem.value = item
   adviceDetail.value = ''
@@ -307,38 +299,53 @@ function closeAdviceDialog() {
 }
 function canSeeSummary(item) {
   if (!item) return false
-  const ownerId = Number(item.staff_ID || 0)
-  return ownerId === staffIdNum
+  return Number(item.staff_ID || 0) === Number(staffIdNum.value || 0)
 }
+
 async function submitCompletion() {
   if (!adviceDetail.value || !adviceDetail.value.trim()) {
     snack.value = { show: true, msg: t('history.advice_required') }
     return
   }
+  if (!selectedItem.value?.appointment_ID) return
   saving.value = true
   try {
-    await axios.post('http://localhost:3000/api/admin/appointments/complete', {
-      appointment_ID: selectedItem.value.appointment_ID,
-      advice_detail: adviceDetail.value.trim(),
-      staff_ID: staffIdNum,
-    })
+    await axios.post(
+      '/api/admin/appointments/complete',
+      {
+        appointment_ID: selectedItem.value.appointment_ID,
+        advice_detail: adviceDetail.value.trim(),
+      },
+      { withCredentials: true }
+    )
     selectedItem.value.status = 'completed'
     selectedItem.value.appointment_summary = adviceDetail.value.trim()
+    if (selectedDetail.value && selectedDetail.value.appointment_ID === selectedItem.value.appointment_ID) {
+      selectedDetail.value.status = 'completed'
+      selectedDetail.value.appointment_summary = adviceDetail.value.trim()
+    }
     adviceDialog.value = false
     snack.value = { show: true, msg: t('history.saved_success') || 'Saved successfully' }
   } catch (error) {
-    console.error('Error submitting completion:', error)
     snack.value = { show: true, msg: t('history.saved_error') || 'Failed to save' }
   } finally {
     saving.value = false
   }
 }
 
-/* ===== Load data ===== */
+async function loadMe() {
+  try {
+    const { data } = await axios.get('/api/me', { withCredentials: true })
+    staffIdNum.value = Number(data?.staff_ID || 0)
+  } catch (e) {
+    staffIdNum.value = 0
+  }
+}
+
 onMounted(async () => {
   try {
-    const params = { role, staff_ID: staffIdNum }
-    const res = await axios.get('http://localhost:3000/api/admin/history', { params })
+    await loadMe()
+    const res = await axios.get('/api/admin/history', { withCredentials: true })
     staffBookings.value = res.data
   } catch (error) {
     console.error('Error loading appointments history:', error)

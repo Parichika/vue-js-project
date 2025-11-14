@@ -10,6 +10,9 @@ import * as directives from "vuetify/directives";
 import "@mdi/font/css/materialdesignicons.css";
 import * as labs from "vuetify/labs/components";
 
+import axios from "axios";
+axios.defaults.withCredentials = true;
+
 // เพิ่ม fontFamily ใน Vuetify config
 const vuetify = createVuetify({
   components: {

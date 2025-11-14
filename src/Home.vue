@@ -43,18 +43,17 @@
 import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { auth } from '@/firebase'
+import { auth } from 'firebase'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import axios from 'axios'
+
+axios.defaults.withCredentials = true
 
 const router = useRouter()
 const route = useRoute()
 
-// i18n
 const { t, locale } = useI18n()
 const STORAGE_KEY = 'app-locale'
-
-// อนุญาตสลับภาษาผ่าน ?lang=en|th ถ้าไม่มีใช้ค่าจำไว้ หรือเดาจากเบราว์เซอร์
 const qpLang = (route.query.lang || '').toString()
 const initial =
   (qpLang === 'th' || qpLang === 'en')
@@ -69,8 +68,7 @@ watch(lang, (l) => {
 })
 const setLang = (l) => (lang.value = l)
 
-// error แทนด้วย key เพื่อให้แปลอัตโนมัติ
-const errorKey = ref('') // 'auth.roleMismatch' | 'auth.signInFailed' | ''
+const errorKey = ref('')
 
 const goHome = () => {
   router.push({ name: 'SignIn' })
@@ -83,9 +81,11 @@ const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, provider)
     const user = result.user
 
-    const res = await axios.post('http://localhost:3000/api/login', {
-      email: user.email
-    })
+    const res = await axios.post(
+      'http://localhost:3000/api/login',
+      { email: user.email },
+      { withCredentials: true }
+    )
 
     const roleFromBackend = res.data.role
     const roleFromQuery = route.query.role || ''
@@ -101,24 +101,19 @@ const signInWithGoogle = async () => {
       }
     }
 
-    // เก็บชื่อให้เหมาะกับบทบาท
     localStorage.setItem('email', user.email)
     if (roleFromBackend === 'student') {
       const displayName = (user.displayName || '').trim()
       localStorage.setItem('name', displayName || user.email.split('@')[0])
     } else {
-      // staff/admin: รองรับ name_th / name_en จาก backend (ถ้า backend ยังไม่ส่งมาก็ fallback)
       const nameTh = (res.data.name_th || '').trim()
       const nameEn = (res.data.name_en || '').trim()
-      const legacy = (res.data.name || user.displayName || '').trim() // เผื่อโค้ดเดิมยังใช้ 'name'
-
-      // เก็บทั้งสาม key ไว้เพื่อ backward-compat
+      const legacy = (res.data.name || user.displayName || '').trim()
       localStorage.setItem('name_th', nameTh)
       localStorage.setItem('name_en', nameEn)
       localStorage.setItem('name', legacy)
     }
 
-    // นำทางตามบทบาท
     if (roleFromBackend === 'admin') {
       localStorage.setItem('staff_ID', res.data.staff_ID)
       localStorage.setItem('role', 'admin')
@@ -132,7 +127,6 @@ const signInWithGoogle = async () => {
       router.push('/user/appointment')
     }
   } catch (e) {
-    console.error('Sign in or login error:', e)
     errorKey.value = 'auth.signInFailed'
   }
 }

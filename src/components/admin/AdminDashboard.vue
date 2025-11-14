@@ -104,7 +104,8 @@
           </div>
           <!-- ใช้ barChartOptions เหมือนกราฟอื่นๆ และคงความสูง 400px -->
           <Bar :data="barChartFacultyData" :options="barChartOptions"
-            :key="(locale === 'th' ? 'th' : 'en') + '-' + barChartFacultyData.labels.join('|')" style="height:400px" />
+            :key="(locale?.value === 'th' ? 'th' : 'en') + '-' + barChartFacultyData.labels.join('|')"
+            style="height:400px" />
         </v-card>
       </v-col>
     </v-row>
@@ -122,6 +123,7 @@ import {
   Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement
 } from 'chart.js'
 
+axios.defaults.withCredentials = true
 ChartJS.register(Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ChartDataLabels)
 
 const { t, locale } = useI18n()
@@ -152,7 +154,7 @@ const clearAll = () => {
 
 // ---- Data container ----
 const dashboardData = ref({
-  summary: {},
+  summary: { total: 0, pending: 0, approved: 0, rejected: 0, completed: 0, cancelled: 0 },
   serviceTypes: [],
   byDay: [],
   byTime: [],
@@ -163,12 +165,22 @@ const dashboardData = ref({
 // ---- API ----
 const loadDashboardData = async (startDate, endDate) => {
   try {
-    const res = await axios.get('http://localhost:3000/api/admin/dashboard', {
-      params: { startDate: startDate ?? null, endDate: endDate ?? null, _: Date.now() },
-      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    const params = {}
+    if (startDate && endDate) {
+      params.startDate = startDate
+      params.endDate = endDate
+    } else if (startDate) {
+      // ถ้าเลือกวันเดียว ให้ endDate = วันเดียวกัน
+      params.startDate = startDate
+      params.endDate = startDate
+    }
+    const res = await axios.get('/api/admin/dashboard', {
+      params,
+      withCredentials: true,
     })
     dashboardData.value = res.data ?? {
-      summary: {}, serviceTypes: [], byDay: [], byTime: [], byFaculty: [], byYear: []
+      summary: { total: 0, pending: 0, approved: 0, rejected: 0, completed: 0, cancelled: 0 },
+      serviceTypes: [], byDay: [], byTime: [], byFaculty: [], byYear: []
     }
   } catch (err) {
     console.error('❌ load dashboard failed:', err)
