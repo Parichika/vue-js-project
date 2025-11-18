@@ -1,5 +1,6 @@
 const express = require("express");
 const { verifyToken } = require("./auth");
+const dayjs = require("dayjs");
 
 module.exports = (db) => {
   const router = express.Router();
@@ -14,7 +15,6 @@ module.exports = (db) => {
     console.log("Body =", req.body);
 
     const {
-      full_name,
       date,
       time,
       phone,
@@ -23,28 +23,46 @@ module.exports = (db) => {
       nationality,
       email,
       place_ID, // ✅ รับตรงจาก frontend
+      name,
     } = req.body;
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if (!full_name || !email || !date || !time || !phone || !place_ID) {
+    if (!email || !date || !time || !phone || !place_ID) {
       console.log("Missing fields:", req.body);
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ตรวจ slot ซ้ำ (ยกเว้น rejected / cancelled)
-    db.query(
-      "SELECT 1 FROM appointment WHERE date = ? AND time = ? AND place_ID = ? AND status NOT IN ('rejected','cancelled')",
-      [date, time, place_ID],
-      (err, existing) => {
-        if (err) return res.status(500).json({ error: err });
-        if (existing.length > 0) {
-          return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
-        }
+    // ต้องจองล่วงหน้าอย่างน้อย 1 วัน (ห้ามจองวันเดียวกันหรือย้อนหลัง)
+    const today = dayjs().startOf("day");
+    const selectedDate = dayjs(date, "YYYY-MM-DD");
 
-        const serviceMap = { life: 1, study: 2, emotion: 3, other: 4 };
-        const service_ID = serviceMap[serviceType] || null;
+    if (!selectedDate.isValid() || !selectedDate.isAfter(today)) {
+      return res.status(400).json({
+        error: "ต้องจองล่วงหน้าอย่างน้อย 1 วัน",
+      });
+    }
 
-        const sql = `
+    // ✅ สร้างชื่อที่จะใช้บันทึกลง DB
+    let full_name =
+      // จาก token (ตอน signAccess ให้ใส่ name มาด้วย เช่น ชื่อจาก Google)
+      req.user?.name ||
+      // หรือจาก body (กรณีอยากส่งชื่อ display name แยกมา)
+      name;
+
+      // ตรวจ slot ซ้ำ (ยกเว้น rejected / cancelled)
+      db.query(
+        "SELECT 1 FROM appointment WHERE date = ? AND time = ? AND place_ID = ? AND status NOT IN ('rejected','cancelled')",
+        [date, time, place_ID],
+        (err, existing) => {
+          if (err) return res.status(500).json({ error: err });
+          if (existing.length > 0) {
+            return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
+          }
+
+          const serviceMap = { life: 1, study: 2, emotion: 3, other: 4 };
+          const service_ID = serviceMap[serviceType] || null;
+
+          const sql = `
           INSERT INTO appointment (
             user_email,
             full_name,
@@ -62,30 +80,30 @@ module.exports = (db) => {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const values = [
-          email,
-          full_name,
-          phone,
-          date,
-          time,
-          null, // staff_ID ยังไม่ assign
-          service_ID,
-          otherService || "",
-          place_ID,
-          nationality,
-          "pending",
-          "",
-        ];
+          const values = [
+            email,
+            full_name,
+            phone,
+            date,
+            time,
+            null, // staff_ID ยังไม่ assign
+            service_ID,
+            otherService || "",
+            place_ID,
+            nationality,
+            "pending",
+            "",
+          ];
 
-        db.query(sql, values, (err2, result) => {
-          if (err2) {
-            console.error("Insert error:", err2);
-            return res.status(500).json({ error: err2 });
-          }
-          res.json({ message: "จองสำเร็จ", appointmentID: result.insertId });
-        });
-      }
-    );
+          db.query(sql, values, (err2, result) => {
+            if (err2) {
+              console.error("Insert error:", err2);
+              return res.status(500).json({ error: err2 });
+            }
+            res.json({ message: "จองสำเร็จ", appointmentID: result.insertId });
+          });
+        }
+      );
   });
 
   /* =========================

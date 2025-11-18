@@ -49,6 +49,7 @@
     "success_alert": "Appointment booked!"
   },
   "status": {
+    "title": "Booking Status",
     "title_date": "Date",
     "title_time": "Time",
     "title_location": "Location",

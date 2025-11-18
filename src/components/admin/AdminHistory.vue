@@ -10,10 +10,16 @@
             </h2>
           </v-col>
 
-          <!-- ช่องค้นหาอยู่ขวา -->
-          <v-col cols="12" sm="5" md="4" lg="3" class="d-flex justify-end">
+          <!-- ช่องค้นหา + ปุ่ม Export Excel อยู่ข้างกัน -->
+          <v-col cols="12" sm="5" md="4" lg="3" class="d-flex justify-end align-center search-export-box">
             <v-text-field v-model="search" :label="t('history.search')" prepend-inner-icon="mdi-magnify"
               variant="outlined" density="compact" hide-details style="min-height:38px; max-width:260px;" clearable />
+
+            <!-- ปุ่ม Export Excel -->
+            <v-btn icon variant="tonal" color="green-darken-1" class="export-btn"
+              :title="t('history.export_excel') || 'Export Excel'" @click="exportXlsx">
+              <v-icon>mdi-file-excel</v-icon>
+            </v-btn>
           </v-col>
         </v-row>
 
@@ -342,6 +348,12 @@ async function loadMe() {
   }
 }
 
+const exportXlsx = () => {
+  const params = new URLSearchParams()
+  const url = `/api/admin/dashboard/xlsx?${params.toString()}`
+  window.open(url, '_blank')
+}
+
 onMounted(async () => {
   try {
     await loadMe()
@@ -417,5 +429,16 @@ tbody tr.hoverable-row:focus-within {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.search-export-box {
+  gap: 14px;
+  /* ระยะห่างระหว่างช่องค้นหาและปุ่ม Excel */
+}
+
+.export-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
 }
 </style>

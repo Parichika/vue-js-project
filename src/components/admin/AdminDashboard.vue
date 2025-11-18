@@ -13,8 +13,6 @@
           <v-text-field v-model="start" type="date" :max="today" :label="t('dashboard.start_date')"
             density="comfortable" variant="outlined" class="date-field" @keydown.enter="applyRange" />
 
-          <div class="sep">–</div>
-
           <v-text-field v-model="end" type="date" :min="start || undefined" :max="today"
             :label="t('dashboard.end_date')" density="comfortable" variant="outlined" class="date-field"
             @keydown.enter="applyRange" />

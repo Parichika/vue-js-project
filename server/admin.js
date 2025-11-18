@@ -1,6 +1,7 @@
 const express = require("express");
 const dayjs = require("dayjs");
 const { verifyToken, verifyRole } = require("./auth");
+const ExcelJS = require("exceljs");
 
 module.exports = (db) => {
   const router = express.Router();
@@ -163,10 +164,13 @@ module.exports = (db) => {
    * ========================= */
   router.get("/dashboard", (req, res) => {
     const { period, startDate, endDate } = req.query;
+    const role = req.user?.role;
+    const staff_ID = req.user?.staff_ID;
 
     let where = "WHERE 1=1";
     const params = [];
 
+    // ---- filter ตามวันที่เหมือนเดิม ----
     if (startDate && endDate) {
       where += " AND a.date BETWEEN ? AND ?";
       params.push(startDate, endDate);
@@ -201,71 +205,77 @@ module.exports = (db) => {
       }
     }
 
+    // 🔹 ถ้าเป็น staff ให้สรุปเฉพาะเคสของตัวเอง
+    if (role === "staff" && staff_ID) {
+      where += " AND a.staff_ID = ?";
+      params.push(staff_ID);
+    }
+    // 🔹 ถ้าเป็น admin ไม่ต้องใส่เงื่อนไข staff -> เห็นทุกเคสเหมือนเดิม
+
     const summaryQuery = `
-    SELECT 
-      COUNT(*) AS total,
-      SUM(a.status = 'pending')   AS pending,
-      SUM(a.status = 'approved')  AS approved,
-      SUM(a.status = 'rejected')  AS rejected,
-      SUM(a.status = 'completed') AS completed,
-      SUM(a.status = 'cancelled') AS cancelled
-    FROM appointment a
-    ${where}
-  `;
+      SELECT 
+        COUNT(*) AS total,
+        SUM(a.status = 'pending')   AS pending,
+        SUM(a.status = 'approved')  AS approved,
+        SUM(a.status = 'rejected')  AS rejected,
+        SUM(a.status = 'completed') AS completed,
+        SUM(a.status = 'cancelled') AS cancelled
+      FROM appointment a
+      ${where}
+    `;
 
     const serviceTypeQuery = `
-    SELECT 
-      st.service_type,
-      COUNT(a.appointment_ID)     AS count,
-      SUM(a.status = 'completed') AS countCompleted
-    FROM service_type st
-    LEFT JOIN appointment a ON st.service_ID = a.service_ID
+      SELECT 
+        st.service_type,
+        COUNT(a.appointment_ID)     AS count,
+        SUM(a.status = 'completed') AS countCompleted
+      FROM service_type st
+      LEFT JOIN appointment a ON st.service_ID = a.service_ID
       ${where.replace("WHERE", "AND")}
-    GROUP BY st.service_type
-  `;
+      GROUP BY st.service_type
+    `;
 
     const byDayQuery = `
-    SELECT DAYNAME(a.date) AS day, COUNT(*) AS count
-    FROM appointment a
-    ${where}
-    GROUP BY day
-  `;
+      SELECT DAYNAME(a.date) AS day, COUNT(*) AS count
+      FROM appointment a
+      ${where}
+      GROUP BY day
+    `;
 
     const byTimeQuery = `
-    SELECT a.time, COUNT(*) AS count
-    FROM appointment a
-    ${where}
-    GROUP BY a.time
-    ORDER BY a.time ASC
-  `;
+      SELECT a.time, COUNT(*) AS count
+      FROM appointment a
+      ${where}
+      GROUP BY a.time
+      ORDER BY a.time ASC
+    `;
 
     const monthlyTrendQuery = `
-    SELECT MONTH(a.date) AS month, st.service_type, COUNT(*) AS count
-    FROM appointment a
-    LEFT JOIN service_type st ON a.service_ID = st.service_ID
-    ${where} AND YEAR(a.date) = YEAR(CURDATE())
-    GROUP BY month, st.service_type
-    ORDER BY month
-  `;
+      SELECT MONTH(a.date) AS month, st.service_type, COUNT(*) AS count
+      FROM appointment a
+      LEFT JOIN service_type st ON a.service_ID = st.service_ID
+      ${where} AND YEAR(a.date) = YEAR(CURDATE())
+      GROUP BY month, st.service_type
+      ORDER BY month
+    `;
 
-    // ถ้าตาราง/คอลัมน์ student ไม่มี ให้ยังส่งผลรวมอื่นๆได้ และ faculty/year = []
     const byFacultyQuery = `
-    SELECT s.faculty_th, s.faculty_en, COUNT(a.appointment_ID) AS count
-    FROM appointment a
-    LEFT JOIN student s ON s.email = a.user_email
-    ${where}
-    GROUP BY s.faculty_th, s.faculty_en
-    ORDER BY count DESC
-  `;
+      SELECT s.faculty_th, s.faculty_en, COUNT(a.appointment_ID) AS count
+      FROM appointment a
+      LEFT JOIN student s ON s.email = a.user_email
+      ${where}
+      GROUP BY s.faculty_th, s.faculty_en
+      ORDER BY count DESC
+    `;
 
     const byYearQuery = `
-    SELECT s.study_year AS \`year\`, COUNT(a.appointment_ID) AS count
-    FROM appointment a
-    LEFT JOIN student s ON s.email = a.user_email
-    ${where}
-    GROUP BY s.study_year
-    ORDER BY \`year\`
-  `;
+      SELECT s.study_year AS \`year\`, COUNT(a.appointment_ID) AS count
+      FROM appointment a
+      LEFT JOIN student s ON s.email = a.user_email
+      ${where}
+      GROUP BY s.study_year
+      ORDER BY \`year\`
+    `;
 
     db.query(summaryQuery, params, (e1, summary) => {
       if (e1) return res.status(500).json({ error: "DB error: summary" });
@@ -282,14 +292,13 @@ module.exports = (db) => {
             db.query(monthlyTrendQuery, params, (e5, trend) => {
               if (e5) return res.status(500).json({ error: "DB error: trend" });
 
-              // faculty/year เป็น optional: ถ้าพังให้ fallback เป็น []
               db.query(byFacultyQuery, params, (e6, byFacultyRows) => {
                 const byFaculty = e6 ? [] : byFacultyRows || [];
 
                 db.query(byYearQuery, params, (e7, byYearRows) => {
                   const byYear = e7 ? [] : byYearRows || [];
 
-                  res.set("Cache-Control", "no-store"); // กัน 304 cache เก่า
+                  res.set("Cache-Control", "no-store");
                   return res.json({
                     summary: summary?.[0] || {
                       total: 0,
@@ -312,6 +321,170 @@ module.exports = (db) => {
           });
         });
       });
+    });
+  });
+
+  /* ======================
+   *  Dashboard Exel
+   * ====================== */
+  router.get("/dashboard/xlsx", async (req, res) => {
+    const { period, startDate, endDate } = req.query;
+
+    let where = "WHERE 1=1";
+    const params = [];
+
+    // ==== filter วันที่ เหมือนเดิม ====
+    if (startDate && endDate) {
+      where += " AND a.date BETWEEN ? AND ?";
+      params.push(startDate, endDate);
+    } else if (period && period !== "ทั้งหมด") {
+      const today = dayjs();
+      let s, e;
+      switch (period) {
+        case "สัปดาห์นี้":
+          s = today.startOf("week");
+          e = today.endOf("week");
+          break;
+        case "สัปดาห์ที่ผ่านมา":
+          s = today.subtract(1, "week").startOf("week");
+          e = today.subtract(1, "week").endOf("week");
+          break;
+        case "เดือนนี้":
+          s = today.startOf("month");
+          e = today.endOf("month");
+          break;
+        case "เดือนที่ผ่านมา":
+          s = today.subtract(1, "month").startOf("month");
+          e = today.subtract(1, "month").endOf("month");
+          break;
+        case "ปีนี้ (จนถึงปัจจุบัน)":
+          s = today.startOf("year");
+          e = today;
+          break;
+      }
+      if (s && e) {
+        where += " AND a.date BETWEEN ? AND ?";
+        params.push(s.format("YYYY-MM-DD"), e.format("YYYY-MM-DD"));
+      }
+    }
+
+    const sql = `
+    SELECT 
+      a.appointment_ID,
+      a.date,
+      a.time,
+      a.status,
+      a.user_email,
+      a.nationality,
+      a.appointment_summary,
+      st.service_type,
+      s.faculty_th,
+      s.faculty_en
+    FROM appointment a
+    LEFT JOIN student s ON s.email = a.user_email
+    LEFT JOIN service_type st ON a.service_ID = st.service_ID
+    ${where}
+    ORDER BY a.date, a.time, a.appointment_ID
+  `;
+
+    const extractStudentCode = (email) => {
+      if (!email) return "";
+      const m = String(email).match(/(\d{8,12})/);
+      return m ? m[1] : "";
+    };
+
+    db.query(sql, params, async (err, rows) => {
+      if (err) {
+        console.error("XLSX ERROR:", err);
+        return res.status(500).json({ error: "DB error: detail xlsx" });
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Dashboard");
+
+      // กำหนดคอลัมน์ + ความกว้าง (ระยะห่างคอลัมน์)
+      sheet.columns = [
+        { header: "ประเภทผู้ใช้บริการ", key: "userType", width: 18 },
+        { header: "รหัสนักศึกษา", key: "studentCode", width: 16 },
+        { header: "สำนักวิชา", key: "faculty", width: 30 },
+        { header: "วันที่รับบริการ", key: "date", width: 14 },
+        { header: "ประเภทบริการ", key: "serviceType", width: 32 },
+        { header: "สถานะ", key: "status", width: 18 },
+        { header: "สรุปคำแนะนำ", key: "summary", width: 80 },
+      ];
+
+      // เติมข้อมูลแถว ๆ
+      rows.forEach((r) => {
+        const natRaw = (r.nationality || "").toLowerCase();
+        let userType = "";
+        if (/thai|ไทย/.test(natRaw)) userType = "นักศึกษาไทย";
+        else if (natRaw) userType = "นักศึกษาต่างชาติ";
+
+        let statusLabel = "";
+        if (["pending", "approved"].includes(r.status))
+          statusLabel = "อยู่ระหว่างให้คำปรึกษา";
+        else if (["completed", "rejected", "cancelled"].includes(r.status))
+          statusLabel = "ยุติการให้คำปรึกษา";
+
+        const dateStr = r.date ? dayjs(r.date).format("YYYY-MM-DD") : "";
+
+        sheet.addRow({
+          userType,
+          studentCode: extractStudentCode(r.user_email),
+          faculty: r.faculty_th || r.faculty_en || "",
+          date: dateStr,
+          serviceType: r.service_type || "",
+          status: statusLabel,
+          summary: r.appointment_summary || "",
+        });
+      });
+
+      // styling หัวตาราง
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFE0E0E0" },
+        };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+
+      // styling แถวข้อมูล
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        row.alignment = { vertical: "top", wrapText: true };
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+
+      // ส่งไฟล์ออก
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="consultation_summary_${dayjs().format(
+          "YYYYMMDD"
+        )}.xlsx"`
+      );
+
+      await workbook.xlsx.write(res);
+      res.end();
     });
   });
 

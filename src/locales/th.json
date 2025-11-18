@@ -49,6 +49,7 @@
     "success_alert": "จองสำเร็จ!"
   },
   "status": {
+    "title": "สถานะการจอง",
     "title_date": "วันที่นัด",
     "title_time": "เวลาที่จอง",
     "title_location": "สถานที่",

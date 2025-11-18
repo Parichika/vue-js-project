@@ -8,16 +8,9 @@
         </h2>
 
         <v-form ref="formRef" @submit.prevent="submitForm">
-          <!-- ชื่อ-นามสกุล -->
-          <v-text-field v-model="form.fullName" :rules="[v => !!v]" variant="outlined" density="comfortable">
-            <template #label>
-              <span style="color:black">{{ t('appointment.full_name') }}</span>
-              <span style="color:red"> *</span>
-            </template>
-          </v-text-field>
 
           <!-- วันที่ -->
-          <v-text-field v-model="form.date" type="date" :min="today" :rules="[v => !!v]" variant="outlined"
+          <v-text-field v-model="form.date" type="date" :min="minDate" :rules="[v => !!v]" variant="outlined"
             density="comfortable">
             <template #label>
               <span style="color:black">{{ t('appointment.date') }}</span>
@@ -27,7 +20,7 @@
 
           <!-- เวลา -->
           <v-select v-model="form.time" :items="availableTimeOptions" item-title="label" item-value="value"
-            variant="outlined" density="comfortable" :loading="loadingOccupied" :disabled="!form.date || !form.channel">
+            variant="outlined" density="comfortable" :loading="loadingOccupied" :disabled="!form.date">
             <template #label>
               <span style="color:black">{{ t('appointment.time') }}</span>
               <span style="color:red"> *</span>
@@ -191,7 +184,6 @@ const formRef = ref(null)
 
 /** form state */
 const form = ref({
-  fullName: '',
   date: '',
   time: '',
   nationality: 'ไทย',
@@ -256,19 +248,33 @@ watch([() => form.value.date, () => form.value.channel], fetchOccupiedTimes, { i
 /** ช่องทาง/สถานที่: แสดง label ตามภาษา แต่ส่งค่าเดิมกลับ backend */
 const allPlaces = ref([])
 const channelOptions = computed(() => {
-  return allPlaces.value
-    .filter(p =>
-      p.place_status === 'open' &&
-      p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
-    )
-    .map(p => ({
-      label: locale.value === 'th' ? p.name_th : p.name_en,
-      value: p.place_ID // ส่งค่า place_ID กลับ backend
-    }));
+  // เอาเฉพาะที่เปิดไว้ก่อน
+  const openPlaces = allPlaces.value.filter(p => p.place_status === 'open')
+
+  // กลุ่มเป้าหมายตามสัญชาติ
+  const target = form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ'
+
+  // กรองตาม target_group (เผื่อใน DB มีทั้ง 'ไทย', 'ต่างชาติ', 'all', 'both')
+  const filtered = openPlaces.filter(
+    p =>
+      p.target_group === target ||
+      p.target_group === 'all' ||
+      p.target_group === 'both' ||
+      p.target_group === 'ทั้งหมด'
+  )
+
+  // ถ้ากรองแล้วว่าง → fallback ใช้ openPlaces ทั้งหมด
+  const finalList = filtered.length ? filtered : openPlaces
+
+  return finalList.map(p => ({
+    label: locale.value === 'th' ? p.name_th : p.name_en,
+    value: p.place_ID
+  }))
 })
 
-/** today */
-const today = computed(() => dayjs().format('YYYY-MM-DD'))
+const minDate = computed(() =>
+  dayjs().add(1, 'day').format('YYYY-MM-DD')
+)
 
 /** places + default channel */
 const fetchPlaces = async () => {
@@ -288,8 +294,9 @@ const fetchPlaces = async () => {
   }
 }
 
-onMounted(() => {
-  fetchPlaces()
+onMounted(async () => {
+  await fetchPlaces()
+  setDefaultChannel()
   fetchOccupiedTimes()
 })
 
@@ -333,7 +340,7 @@ const submitForm = async () => {
   }
 
   const payload = {
-    full_name: form.value.fullName,
+    // full_name: form.value.fullName,
     date: form.value.date,
     time: form.value.time,
     phone: form.value.phone,
@@ -374,7 +381,6 @@ const submitForm = async () => {
 }
 
 const initialForm = () => ({
-  fullName: '',
   date: '',
   time: '',
   nationality: 'ไทย',
@@ -385,10 +391,20 @@ const initialForm = () => ({
 })
 
 const setDefaultChannel = () => {
-  const firstOpen = allPlaces.value.find(
-    p => p.place_status === 'open' &&
-      p.target_group === (form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ')
+  const openPlaces = allPlaces.value.filter(p => p.place_status === 'open')
+  const target = form.value.nationality === 'ไทย' ? 'ไทย' : 'ต่างชาติ'
+
+  const filtered = openPlaces.filter(
+    p =>
+      p.target_group === target ||
+      p.target_group === 'all' ||
+      p.target_group === 'both' ||
+      p.target_group === 'ทั้งหมด'
   )
+
+  const finalList = filtered.length ? filtered : openPlaces
+
+  const firstOpen = finalList[0]
   if (firstOpen) form.value.channel = firstOpen.place_ID
 }
 

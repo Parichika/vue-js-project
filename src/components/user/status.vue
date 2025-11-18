@@ -3,15 +3,13 @@
   <v-app>
     <v-main>
       <v-container>
-        <!-- Info text + icon มุมขวาบน -->
-        <div class="table-header-actions">
-          <div class="info-inline clickable" @click="cancelInfoDialog = true">
-            <span class="info-text">{{ t('status.cancel_info_title') }}</span>
-            <v-avatar class="info-badge" size="26">
-              <v-icon size="16">mdi-information</v-icon>
-            </v-avatar>
-          </div>
-        </div>
+
+        <!-- หัวข้อ -->
+        <v-row class="mb-4" justify="center">
+          <v-col cols="auto" class="text-center">
+            <h2 class="text-h5 font-weight-bold mb-0">{{ t('status.title') }}</h2>
+          </v-col>
+        </v-row>
 
         <v-table style="table-layout: fixed; width: 100%">
           <thead style="background-color: #009199; color: white">
@@ -46,27 +44,37 @@
 
               <td>
                 <div class="d-flex align-center justify-center ga-2">
-                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black"
-                    @click="openCancelDialog(index)">
+                  <!-- สถานะ -->
+                  <v-chip v-if="item.status === 'pending'" color="#FF6F00" text-color="black">
                     <v-icon start small>mdi-timer-sand</v-icon>
                     {{ t('status.pending') }}
                   </v-chip>
+
                   <v-chip v-else-if="item.status === 'approved'" color="green" text-color="white">
                     <v-icon start small>mdi-check-circle</v-icon>
                     {{ t('status.approved') }}
                   </v-chip>
+
                   <v-chip v-else-if="item.status === 'rejected'" color="red" text-color="white">
                     <v-icon start small>mdi-close-circle</v-icon>
                     {{ t('status.rejected') }}
                   </v-chip>
+
                   <v-chip v-else-if="item.status === 'cancelled'" color="grey" text-color="white">
                     <v-icon start small>mdi-cancel</v-icon>
                     {{ t('status.cancelled') }}
                   </v-chip>
+
                   <v-chip v-else-if="item.status === 'completed'" color="blue" text-color="white">
                     <v-icon start small>mdi-check-decagram</v-icon>
                     {{ t('status.completed') }}
                   </v-chip>
+
+                  <!-- ไอคอนยกเลิก (เฉพาะ pending) -->
+                  <v-icon v-if="item.status === 'pending'" class="cancel-icon" size="22" color="error"
+                    @click="openCancelDialog(index)">
+                    mdi-trash-can-outline
+                  </v-icon>
                 </div>
               </td>
 
@@ -105,33 +113,6 @@
                 {{ props.lang === 'th' ? 'ยืนยัน' : 'Confirm' }}
               </v-btn>
             </v-card-actions>
-          </v-card>
-        </v-dialog>
-
-        <!-- Dialog ข้อมูลวิธียกเลิก (modern) -->
-        <v-dialog v-model="cancelInfoDialog" max-width="420" transition="dialog-bottom-transition"
-          scrim="rgba(0,0,0,.35)">
-          <v-card class="modern-dialog" elevation="0" rounded="xl">
-            <div class="modern-title">
-              <div class="title-icon info">
-                <v-icon size="22">mdi-information</v-icon>
-              </div>
-              <div class="title-text">
-                {{ t('status.cancel_info_title') }}
-              </div>
-            </div>
-
-            <div class="modern-body">
-              <p class="content">
-                {{ t('status.cancel_info_desc') }}
-              </p>
-            </div>
-
-            <div class="modern-actions right">
-              <v-btn class="btn-primary" @click="cancelInfoDialog = false">
-                {{ t('status.cancel_info_ok') }}
-              </v-btn>
-            </div>
           </v-card>
         </v-dialog>
       </v-container>
