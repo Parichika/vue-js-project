@@ -10,7 +10,7 @@ function signAccess(payload) {
   return jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRE });
 }
 
-// Middleware ตรวจสอบ JWT จาก cookieฟ
+// Middleware ตรวจสอบ JWT จาก cookie
 function verifyToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   let token = null;
