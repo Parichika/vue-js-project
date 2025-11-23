@@ -6,6 +6,11 @@ const {
   isThaiHoliday,
 } = require("./holidayService");
 
+const MAX_USERS_PER_SLOT = (() => {
+  const n = parseInt(process.env.MAX_USERS_PER_SLOT || "1", 10);
+  return Number.isInteger(n) && n > 0 ? n : 1;
+})();
+
 module.exports = (db) => {
   const router = express.Router();
 
@@ -133,16 +138,30 @@ module.exports = (db) => {
         console.error("student upsert error:", stuErr);
       }
 
-      // ตรวจ slot ซ้ำ (ยกเว้น rejected / cancelled)
+      // ตรวจ slot ซ้ำแบบรองรับหลายคน / slot
       db.query(
-        "SELECT 1 FROM appointment WHERE date = ? AND time = ? AND place_ID = ? AND status NOT IN ('rejected','cancelled')",
-        [date, time, place_ID],
-        (err, existing) => {
-          if (err) return res.status(500).json({ error: err });
-          if (existing.length > 0) {
-            return res.status(409).json({ error: "Slot นี้ถูกจองแล้ว" });
+        `
+          SELECT COUNT(*) AS used_count
+          FROM appointment
+          WHERE date = ?
+            AND time = ?
+            AND place_ID = ?
+            AND status NOT IN ('rejected','cancelled')
+        `,
+        [dateOnly, time, place_ID],
+        (err, rows) => {
+          if (err) {
+            console.error("Check slot error:", err);
+            return res.status(500).json({ error: "Database error" });
           }
 
+          const used = rows?.[0]?.used_count || 0;
+
+          if (used >= MAX_USERS_PER_SLOT) {
+            return res.status(409).json({ error: "Slot นี้ถูกจองเต็มแล้ว" });
+          }
+
+          // ถ้ายังไม่เต็ม → ค่อย INSERT
           const serviceMap = { life: 1, study: 2, emotion: 3, other: 4 };
           const service_ID = serviceMap[serviceType] || null;
 
@@ -226,18 +245,25 @@ module.exports = (db) => {
       return res.status(400).json({ error: "Missing date or place_ID" });
     }
 
-    db.query(
-      "SELECT time FROM appointment WHERE date = ? AND place_ID = ? AND status NOT IN ('rejected','cancelled')",
-      [date, place_ID],
-      (err, results) => {
-        if (err) {
-          console.error("Error fetching occupied:", err);
-          return res.status(500).json({ error: "Database error" });
-        }
-        const times = results.map((r) => r.time);
-        res.json(times);
+    const sql = `
+    SELECT time, COUNT(*) AS used_count
+    FROM appointment
+    WHERE date = ?
+      AND place_ID = ?
+      AND status NOT IN ('rejected','cancelled')
+    GROUP BY time
+    HAVING used_count >= ?
+  `;
+
+    db.query(sql, [date, place_ID, MAX_USERS_PER_SLOT], (err, results) => {
+      if (err) {
+        console.error("Error fetching occupied:", err);
+        return res.status(500).json({ error: "Database error" });
       }
-    );
+      // ส่งเฉพาะ time ที่เต็มแล้ว
+      const times = results.map((r) => r.time);
+      res.json(times);
+    });
   });
 
   /* =========================
