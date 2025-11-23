@@ -2,9 +2,10 @@
 <template>
   <v-container class="py-6">
     <!-- ===== Staff Management ===== -->
-    <v-row justify="space-between" align="center" class="mb-4">
+    <v-row justify="space-between" align="center" class="mb-4 section-header-row">
       <h2 class="text-h6 font-weight-bold">{{ t('manage.staff.title') }}</h2>
-      <v-btn color="pink-lighten-4" prepend-icon="mdi-plus" @click="dialogStaff = true" elevation="0">
+      <v-btn color="pink-lighten-4" prepend-icon="mdi-plus" class="manage-add-btn" @click="dialogStaff = true"
+        elevation="0">
         {{ t('manage.staff.btn_add') }}
       </v-btn>
     </v-row>
@@ -115,9 +116,10 @@
     </v-dialog>
 
     <!-- ===== Place Management ===== -->
-    <v-row justify="space-between" align="center" class="my-8">
+    <v-row justify="space-between" align="center" class="my-4 section-header-row">
       <h2 class="text-h6 font-weight-bold">{{ t('manage.place.title') }}</h2>
-      <v-btn color="blue-lighten-4" prepend-icon="mdi-plus" @click="dialogPlace = true" elevation="0">
+      <v-btn color="blue-lighten-4" prepend-icon="mdi-plus" class="manage-add-btn" @click="dialogPlace = true"
+        elevation="0">
         {{ t('manage.place.btn_add') }}
       </v-btn>
     </v-row>
@@ -390,9 +392,9 @@ const addPlace = async () => {
     })
     placeList.value.push({
       id: res.data.place_ID,
-      name_th: res.data.name_th,
-      name_en: res.data.name_en,
-      target: res.data.target,
+      name_th: f.name_th,
+      name_en: f.name_en,
+      target: f.target,
       active: true
     })
     formPlace.value = { name_th: '', name_en: '', target: '' }
@@ -430,5 +432,31 @@ onMounted(() => {
 <style scoped>
 .v-table thead th {
   font-weight: bold;
+}
+
+.section-header-row {
+  margin-inline: 0;
+}
+
+.section-title {
+  padding-left: 16px;
+}
+
+.manage-add-btn {
+  min-width: 170px;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .section-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .manage-add-btn {
+    align-self: flex-start;
+    width: auto;
+  }
 }
 </style>

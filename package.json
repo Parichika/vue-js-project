@@ -21,6 +21,7 @@
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "firebase": "^11.10.0",
+    "googleapis": "^166.0.0",
     "ics": "^3.8.1",
     "jsonwebtoken": "^9.0.2",
     "mysql": "^2.18.1",

@@ -22,7 +22,7 @@
       "request": "คำขอบริการ",
       "history": "ประวัติการให้บริการ",
       "dashboard": "สถิติการให้บริการ",
-      "staffmanage": "จัดการบุคลากร"
+      "staffmanage": "จัดการระบบ"
     }
   },
   "appointment": {
@@ -46,7 +46,9 @@
     "specify": "กรุณาพิมพ์ตัวเลือกอื่นที่นี่",
     "submit": "ยืนยัน",
     "privacy_note": "หมายเหตุ : ข้อมูลของท่านจะถูกเก็บเป็นความลับ และใช้เพื่อการนัดหมายเท่านั้น",
-    "success_alert": "จองสำเร็จ!"
+    "success_alert": "จองสำเร็จ!\nเช็คสถานะได้ภายใน 1 วันทำการ",
+    "select_date": "เลือกวันที่",
+    "no_date": "ยังไม่ได้เลือกวันที่"
   },
   "status": {
     "title": "สถานะการจอง",
@@ -54,12 +56,12 @@
     "title_time": "เวลาที่จอง",
     "title_location": "สถานที่",
     "title_type": "ประเภท",
-    "title_staff": "ผู้ดูแล",
+    "title_staff": "ผู้ให้คำปรึกษา",
     "title_status": "สถานะ",
     "title_note": "หมายเหตุ",
     "pending": "รอดำเนินการ",
     "approved": "อนุมัติ",
-    "rejected": "ปฏิเสธ",
+    "rejected": "เลื่อนนัด",
     "cancelled": "ยกเลิกการจอง",
     "completed": "เสร็จสิ้น",
     "cancel_confirm_title": "คุณต้องการยกเลิกการนัดหมายหรือไม่?",
@@ -76,7 +78,7 @@
     "col_time": "เวลา",
     "col_location": "สถานที่",
     "col_type": "ประเภท",
-    "col_booker": "ผู้จอง",
+    "col_booker": "ผู้รับบริการ",
     "col_email": "อีเมล",
     "col_phone": "เบอร์โทร",
     "col_status": "สถานะ",
@@ -89,12 +91,12 @@
     "f_type": "ประเภทการบริการ",
     "f_place": "สถานที่",
     "btn_approve": "อนุมัติ",
-    "btn_reject": "ปฏิเสธ",
-    "reject_title": "ระบุเหตุผลการปฏิเสธ",
+    "btn_reject": "เลื่อนนัด",
+    "reject_title": "ระบุเหตุผลการเลื่อนนัด",
     "reject_reason_label": "เหตุผล (ต้องกรอก)",
     "reject_reason_rule": "โปรดระบุเหตุผล",
     "btn_cancel": "ยกเลิก",
-    "btn_confirm_reject": "ยืนยันปฏิเสธ",
+    "btn_confirm_reject": "ยืนยันการเลื่อนนัด",
     "unspecified": "ไม่ระบุ"
   },
   "history": {
@@ -104,14 +106,15 @@
     "col_time": "เวลา",
     "col_location": "สถานที่",
     "col_type": "ประเภท",
-    "col_name": "ผู้จอง",
+    "col_name": "ผู้รับบริการ",
+    "col_staff": "ผู้ให้คำปรึกษา",
     "col_email": "อีเมล",
     "col_phone": "เบอร์โทร",
     "col_status": "สถานะ",
     "btn_cancel": "ยกเลิก",
     "col_summary": "สรุปคำแนะนำ",
     "btn_save": "บันทึก",
-    "advice_title": "ระบุคำแนะนำที่ให้",
+    "advice_title": "บันทึกคำแนะนำ",
     "advice_label": "คำแนะนำ",
     "advice_required": "กรุณากรอกคำแนะนำ",
     "advice_subtitle": "บันทึกข้อความสั้น ๆ เพื่อให้สามารถติดตามเคสในภายหลังได้",
@@ -124,7 +127,9 @@
     "advice_owner_only": "ดู/บันทึกคำแนะนำได้เฉพาะเจ้าของเคส",
     "unspecified": "ไม่ระบุ",
     "summary_label": "สรุปคำแนะนำ",
-    "summary_empty": "ยังไม่มีสรุป"
+    "summary_empty": "ยังไม่มีสรุป",
+    "staff_unassigned": "ยังไม่มีผู้รับเคส",
+    "advice_placeholder": "เช่น แนวทางดูแลตนเอง ทรัพยากรแนะนำ หรือแผนการนัดครั้งถัดไป"
   },
   "dashboard": {
     "title": "รายงานคำขอเข้ารับบริการ",
@@ -133,7 +138,7 @@
     "card_pending": "รอดำเนินการ",
     "card_approved": "อนุมัติแล้ว",
     "card_completed": "ให้คำปรึกษาเสร็จสิ้น",
-    "card_rejected": "ถูกปฏิเสธ",
+    "card_rejected": "ถูกเลื่อนนัด",
     "card_cancelled": "ยกเลิก",
     "chart_type_all": "ประเภทคำขอบริการ (ทั้งหมด)",
     "chart_type_completed": "ประเภทคำขอบริการ (เสร็จสิ้น)",
@@ -178,14 +183,17 @@
     "start_date": "วันที่เริ่ม",
     "end_date": "วันที่สิ้นสุด",
     "filter": "กรอง",
-    "clear": "ล้าง"
+    "clear": "ล้าง",
+    "pick_category": "เลือกหมวดหมู่"
   },
   "common": {
     "on": "เปิด",
     "off": "ปิด",
     "cancel": "ยกเลิก",
     "add": "เพิ่ม",
-    "required": "กรุณากรอกข้อมูล"
+    "required": "กรุณากรอกข้อมูล",
+    "clear": "ล้างค่า",
+    "done": "เสร็จสิ้น"
   },
   "manage": {
     "staff": {

@@ -22,7 +22,7 @@
       "request": "Service Requests",
       "history": "Service History",
       "dashboard": "Service Dashboard",
-      "staffmanage": "Staff Management"
+      "staffmanage": "System Management"
     }
   },
   "appointment": {
@@ -46,7 +46,9 @@
     "specify": "Please specify other",
     "submit": "Submit",
     "privacy_note": "Note: Your information will be kept confidential and used only for appointment scheduling.",
-    "success_alert": "Appointment booked!"
+    "success_alert": "Appointment booked!\nCheck status within 1 business day.",
+    "select_date": "Select date",
+    "no_date": "No date selected"
   },
   "status": {
     "title": "Booking Status",
@@ -59,7 +61,7 @@
     "title_note": "Remark",
     "pending": "Pending",
     "approved": "Approved",
-    "rejected": "Rejected",
+    "rejected": "Rescheduled",
     "cancelled": "Cancelled",
     "completed": "Completed",
     "cancel_confirm_title": "Cancel appointment?",
@@ -89,12 +91,12 @@
     "f_type": "Service Type",
     "f_place": "Location",
     "btn_approve": "Approve",
-    "btn_reject": "Reject",
-    "reject_title": "Rejection Reason",
+    "btn_reject": "Reschedule",
+    "reject_title": "Reschedule Reason",
     "reject_reason_label": "Reason (required)",
     "reject_reason_rule": "Please provide a reason",
     "btn_cancel": "Cancel",
-    "btn_confirm_reject": "Confirm Reject",
+    "btn_confirm_reject": "Confirm Reschedule",
     "unspecified": "Unspecified"
   },
   "history": {
@@ -105,6 +107,7 @@
     "col_location": "Location",
     "col_type": "Type",
     "col_name": "Name",
+    "col_staff": "Staff",
     "col_email": "Email",
     "col_phone": "Phone",
     "col_status": "Status",
@@ -124,7 +127,9 @@
     "advice_owner_only": "Advice is visible/editable by the case owner only",
     "unspecified": "Unspecified",
     "summary_label": "Advice Summary",
-    "summary_empty": "No summary yet"
+    "summary_empty": "No summary yet",
+    "staff_unassigned": "Not assigned yet",
+    "advice_placeholder": "e.g. Self-care steps, recommended resources, next session plan"
   },
   "dashboard": {
     "title": "Counselling Request Report",
@@ -133,7 +138,7 @@
     "card_pending": "Pending",
     "card_approved": "Approved",
     "card_completed": "Completed",
-    "card_rejected": "Rejected",
+    "card_rejected": "Rescheduled",
     "card_cancelled": "Cancelled",
     "chart_type_all": "Request Types (All)",
     "chart_type_completed": "Request Types (Completed)",
@@ -177,14 +182,17 @@
     "start_date": "Start date",
     "end_date": "End date",
     "filter": "Filter",
-    "clear": "Clear"
+    "clear": "Clear",
+    "pick_category": "Select category"
   },
   "common": {
     "on": "On",
     "off": "Off",
     "cancel": "Cancel",
     "add": "Add",
-    "required": "This field is required"
+    "required": "This field is required",
+    "clear": "Clear",
+    "done": "Done"
   },
   "manage": {
     "staff": {

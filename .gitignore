@@ -5,6 +5,7 @@ node_modules
 
 # local env files
 .env
+*.env
 .env.local
 .env.*.local
 
@@ -19,6 +20,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Google service account keys
+server/keys/
+keys/
+*.key.json
+*.serviceaccount.json
 
 # Editor directories and files
 .idea

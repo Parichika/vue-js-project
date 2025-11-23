@@ -98,20 +98,40 @@ module.exports = (db) => {
 
     if (role === "admin") {
       sql = `
-      SELECT a.*, p.place_name_th, p.place_name_en, st.service_type
+      SELECT 
+        a.*,
+        p.place_name_th, 
+        p.place_name_en, 
+        st.service_type,
+        sf.first_name_th  AS staff_first_name_th,
+        sf.last_name_th   AS staff_last_name_th,
+        sf.first_name_en  AS staff_first_name_en,
+        sf.last_name_en   AS staff_last_name_en,
+        sf.email          AS staff_email
       FROM appointment a
-      LEFT JOIN place p ON a.place_ID = p.place_ID
+      LEFT JOIN place p        ON a.place_ID = p.place_ID
       LEFT JOIN service_type st ON a.service_ID = st.service_ID
+      LEFT JOIN staff sf       ON a.staff_ID = sf.staff_ID
       WHERE a.status IN ('approved','rejected','completed','cancelled')
       ORDER BY a.appointment_ID DESC
     `;
       params = [];
     } else if (role === "staff") {
       sql = `
-      SELECT a.*, p.place_name_th, p.place_name_en, st.service_type
+      SELECT 
+        a.*,
+        p.place_name_th, 
+        p.place_name_en, 
+        st.service_type,
+        sf.first_name_th  AS staff_first_name_th,
+        sf.last_name_th   AS staff_last_name_th,
+        sf.first_name_en  AS staff_first_name_en,
+        sf.last_name_en   AS staff_last_name_en,
+        sf.email          AS staff_email
       FROM appointment a
-      LEFT JOIN place p ON a.place_ID = p.place_ID
+      LEFT JOIN place p        ON a.place_ID = p.place_ID
       LEFT JOIN service_type st ON a.service_ID = st.service_ID
+      LEFT JOIN staff sf       ON a.staff_ID = sf.staff_ID
       WHERE a.staff_ID = ?
         AND a.status IN ('approved','rejected','completed','cancelled')
       ORDER BY a.appointment_ID DESC
@@ -260,21 +280,37 @@ module.exports = (db) => {
     `;
 
     const byFacultyQuery = `
-      SELECT s.faculty_th, s.faculty_en, COUNT(a.appointment_ID) AS count
+      SELECT 
+        mm.faculty_th,
+        mm.faculty_en,
+        COUNT(a.appointment_ID) AS count
       FROM appointment a
-      LEFT JOIN student s ON s.email = a.user_email
+      LEFT JOIN major_map mm
+        ON a.student_code IS NOT NULL
+        AND a.student_code <> ''
+        AND mm.major_code = SUBSTRING(a.student_code, 4, 4)
       ${where}
-      GROUP BY s.faculty_th, s.faculty_en
+      GROUP BY mm.faculty_th, mm.faculty_en
       ORDER BY count DESC
     `;
 
     const byYearQuery = `
-      SELECT s.study_year AS \`year\`, COUNT(a.appointment_ID) AS count
+      SELECT
+        CASE
+          WHEN a.student_code IS NULL OR a.student_code = '' THEN NULL
+          ELSE
+            (
+              ((YEAR(CURDATE()) + 43) % 100)
+              - CAST(SUBSTRING(a.student_code, 1, 2) AS UNSIGNED)
+              + 1
+            )
+        END AS \`year\`,
+        COUNT(a.appointment_ID) AS count
       FROM appointment a
-      LEFT JOIN student s ON s.email = a.user_email
       ${where}
-      GROUP BY s.study_year
-      ORDER BY \`year\`
+      GROUP BY \`year\`
+      HAVING \`year\` BETWEEN 1 AND 4
+      ORDER BY \`year\`;
     `;
 
     db.query(summaryQuery, params, (e1, summary) => {
@@ -369,19 +405,26 @@ module.exports = (db) => {
     }
 
     const sql = `
-    SELECT 
+    SELECT
       a.appointment_ID,
       a.date,
       a.time,
       a.status,
       a.user_email,
+      a.student_code,
       a.nationality,
       a.appointment_summary,
       st.service_type,
       s.faculty_th,
       s.faculty_en
     FROM appointment a
-    LEFT JOIN student s ON s.email = a.user_email
+    LEFT JOIN student s
+      ON s.email = a.user_email
+      OR (
+        a.student_code IS NOT NULL
+        AND a.student_code <> ''
+        AND s.email LIKE CONCAT(a.student_code, '%')
+      )
     LEFT JOIN service_type st ON a.service_ID = st.service_ID
     ${where}
     ORDER BY a.date, a.time, a.appointment_ID
@@ -496,6 +539,7 @@ module.exports = (db) => {
     SELECT staff_ID, email, phone_number, role, staff_status,
            first_name_th, last_name_th, first_name_en, last_name_en
     FROM staff
+    ORDER BY staff_ID ASC
   `;
     db.query(sql, (err, rows) => {
       if (err) return res.status(500).json({ error: "Database error" });

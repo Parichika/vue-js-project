@@ -31,6 +31,8 @@
               <th class="text-center" style="width:15%;">{{ t('history.col_time') }}</th>
               <th class="text-center" style="width:35%;">{{ t('history.col_type') }}</th>
               <th class="text-center" style="width:20%;">{{ t('history.col_name') }}</th>
+              <!-- ผู้ให้คำปรึกษา -->
+              <th class="text-center" style="width:20%;">{{ t('history.col_staff') }}</th>
               <th class="text-center" style="width:15%;">{{ t('history.col_status') }}</th>
             </tr>
           </thead>
@@ -58,6 +60,11 @@
 
               <td class="text-center">
                 <span class="one-line">{{ item.full_name }}</span>
+              </td>
+
+              <!-- ชื่อผู้ให้คำปรึกษา -->
+              <td class="text-center">
+                <span class="one-line">{{ displayStaffName(item) }}</span>
               </td>
 
               <td class="text-center">
@@ -173,21 +180,17 @@
           <v-card-text class="pt-2">
             <v-textarea v-model="adviceDetail" :rules="[v => !!(v && v.trim()) || t('history.advice_required')]"
               variant="outlined" auto-grow rows="4" max-rows="10" counter="500" :maxlength="500" clearable
-              :label="t('history.advice_label')"
-              placeholder="e.g. Self-care steps, recommended resources, next session plan">
-              <template #prepend>
-                <v-icon class="mr-2">mdi-text-box-edit-outline</v-icon>
-              </template>
+              :label="t('history.advice_label')" :placeholder="t('history.advice_placeholder')">
             </v-textarea>
           </v-card-text>
 
-          <v-card-actions>
+          <v-card-actions class="advice-actions">
             <v-spacer />
             <v-btn variant="outlined" color="grey-darken-1" rounded="lg" :disabled="saving"
               @click="closeAdviceDialog()">
               {{ t('history.btn_cancel') }}
             </v-btn>
-            <v-btn color="primary" variant="flat" :loading="saving" @click="submitCompletion">
+            <v-btn color="primary" rounded="lg" variant="flat" :loading="saving" @click="submitCompletion">
               {{ t('history.btn_save') }}
             </v-btn>
           </v-card-actions>
@@ -261,6 +264,23 @@ function displayPlaceName(p = {}) {
   return name || '-'
 }
 
+function displayStaffName(p = {}) {
+  const code = String(locale.value || '').toLowerCase()
+
+  const thName = [p.staff_first_name_th, p.staff_last_name_th]
+    .filter(Boolean)
+    .join(' ')
+  const enName = [p.staff_first_name_en, p.staff_last_name_en]
+    .filter(Boolean)
+    .join(' ')
+
+  const name = code.startsWith('en') ? (enName || thName) : (thName || enName)
+
+  // ถ้ายังไม่มี staff_ID แปลว่ายังไม่มีคนรับเคส
+  if (!name) return t('history.staff_unassigned') || '-'
+  return name
+}
+
 const translatedBookings = computed(() =>
   staffBookings.value.filter(item =>
     ['approved', 'rejected', 'completed', 'cancelled'].includes(item.status)
@@ -275,7 +295,13 @@ const filteredBookings = computed(() => {
     const fields = [
       item.full_name, item.user_email, item.phone_number,
       item.place_name_th, item.place_name_en,
-      item.other_type, item.service_type, item.status
+      item.other_type, item.service_type, item.status,
+      // ชื่อ staff
+      item.staff_first_name_th,
+      item.staff_last_name_th,
+      item.staff_first_name_en,
+      item.staff_last_name_en,
+      item.staff_email
     ]
     return studentIdPart.includes(keyword) ||
       fields.some(x => (x || '').toString().toLowerCase().includes(keyword))
@@ -440,5 +466,17 @@ tbody tr.hoverable-row:focus-within {
   width: 42px;
   height: 42px;
   border-radius: 50%;
+}
+
+.advice-actions {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-inline: 24px;
+}
+
+@media (max-width: 960px) {
+  .advice-actions {
+    padding-inline: 16px;
+  }
 }
 </style>

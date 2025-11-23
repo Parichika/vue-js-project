@@ -1,16 +1,58 @@
 const express = require("express");
 const { verifyToken } = require("./auth");
 const dayjs = require("dayjs");
+const {
+  getThaiHolidaysFromDBOrGoogle,
+  isThaiHoliday,
+} = require("./holidayService");
 
 module.exports = (db) => {
   const router = express.Router();
 
   router.use(verifyToken);
 
+  // ------------------------
+  // Helper: upsert student
+  // ------------------------
+  function upsertStudentFromEmail(db, email, cb) {
+    const m = String(email).match(/(\d{8,12})/);
+    if (!m) return cb();
+
+    const studentCode = m[1];
+    const majorCode = studentCode.substring(3, 7);
+
+    // ---- คำนวณชั้นปีแบบ MFU ----
+    const yy = parseInt(studentCode.substring(0, 2), 10); // ปีเข้า เช่น 65
+
+    const currentYY = (new Date().getFullYear() + 43) % 100;
+    let studyYear = currentYY - yy + 1;
+    if (studyYear < 1 || studyYear > 4) studyYear = null;
+
+    // ---- ดึงสำนักวิชาจาก major_map ----
+    const facSql =
+      "SELECT faculty_th, faculty_en FROM major_map WHERE major_code = ?";
+    db.query(facSql, [majorCode], (err, rows) => {
+      if (err) return cb(err);
+
+      const fTh = rows[0]?.faculty_th || null;
+      const fEn = rows[0]?.faculty_en || null;
+
+      const sql = `
+      INSERT INTO student (email, study_year, faculty_th, faculty_en)
+      VALUES (?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        study_year = VALUES(study_year),
+        faculty_th = VALUES(faculty_th),
+        faculty_en = VALUES(faculty_en)
+    `;
+      db.query(sql, [email, studyYear, fTh, fEn], cb);
+    });
+  }
+
   /* =========================
    *  สร้างการจอง (POST)
    * ========================= */
-  router.post("/appointments", (req, res) => {
+  router.post("/appointments", async (req, res) => {
     console.log("POST /api/user/appointments called");
     console.log("Body =", req.body);
 
@@ -21,10 +63,13 @@ module.exports = (db) => {
       serviceType,
       otherService,
       nationality,
-      email,
-      place_ID, // ✅ รับตรงจาก frontend
+      email: bodyEmail, // email ที่มาจาก frontend (ถ้ามี)
+      place_ID, // รับตรงจาก frontend
       name,
     } = req.body;
+
+    // ใช้ email จาก token ก่อน ถ้าไม่มีค่อยใช้จาก body
+    const email = req.user?.email || bodyEmail;
 
     // ตรวจสอบข้อมูลที่จำเป็น
     if (!email || !date || !time || !phone || !place_ID) {
@@ -34,20 +79,59 @@ module.exports = (db) => {
 
     // ต้องจองล่วงหน้าอย่างน้อย 1 วัน (ห้ามจองวันเดียวกันหรือย้อนหลัง)
     const today = dayjs().startOf("day");
-    const selectedDate = dayjs(date, "YYYY-MM-DD");
+    const selectedDate = dayjs(date).startOf("day"); // ให้ dayjs แกะ ISO ให้เอง
+    const tomorrow = today.add(1, "day");
 
-    if (!selectedDate.isValid() || !selectedDate.isAfter(today)) {
+    if (!selectedDate.isValid() || !selectedDate.isSame(tomorrow, "day")) {
       return res.status(400).json({
-        error: "ต้องจองล่วงหน้าอย่างน้อย 1 วัน",
+        error: "สามารถจองได้เฉพาะวันถัดไปเท่านั้น",
       });
     }
 
-    // ✅ สร้างชื่อที่จะใช้บันทึกลง DB
+    // ใช้รูปแบบวันที่ที่ MySQL ต้องการ (YYYY-MM-DD) ให้เหมือนกันทุกที่
+    const dateOnly = selectedDate.format("YYYY-MM-DD");
+
+    // เสาร์-อาทิตย์
+    const dow = selectedDate.day(); // 0 = Sunday, 6 = Saturday
+    if (dow === 0 || dow === 6) {
+      return res.status(400).json({
+        error: "ไม่สามารถจองวันเสาร์-อาทิตย์ได้",
+      });
+    }
+
+    // วันหยุดนักขัตฤกษ์ (ใช้ Google Calendar + cache DB)
+    try {
+      const isHoliday = await isThaiHoliday(
+        db,
+        selectedDate.format("YYYY-MM-DD")
+      );
+      if (isHoliday) {
+        return res.status(400).json({
+          error: "ไม่สามารถจองในวันหยุดนักขัตฤกษ์ได้",
+        });
+      }
+    } catch (e) {
+      console.error("holiday check error:", e);
+    }
+
+    // สร้างชื่อที่จะใช้บันทึกลง DB
     let full_name =
       // จาก token (ตอน signAccess ให้ใส่ name มาด้วย เช่น ชื่อจาก Google)
       req.user?.name ||
       // หรือจาก body (กรณีอยากส่งชื่อ display name แยกมา)
-      name;
+      name ||
+      null;
+
+    // ดึง student_code จาก email
+    const student_code = (() => {
+      const m = String(email).match(/(\d{8,12})/); // ปรับช่วงตัวเลขได้ตามรูปแบบรหัส นศ.
+      return m ? m[1] : null;
+    })();
+
+    upsertStudentFromEmail(db, email, (stuErr) => {
+      if (stuErr) {
+        console.error("student upsert error:", stuErr);
+      }
 
       // ตรวจ slot ซ้ำ (ยกเว้น rejected / cancelled)
       db.query(
@@ -63,28 +147,30 @@ module.exports = (db) => {
           const service_ID = serviceMap[serviceType] || null;
 
           const sql = `
-          INSERT INTO appointment (
-            user_email,
-            full_name,
-            phone_number,
-            date,
-            time,
-            staff_ID,
-            service_ID,
-            other_type,
-            place_ID,
-            nationality,
-            status,
-            appointment_summary
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+            INSERT INTO appointment (
+              user_email,
+              student_code,
+              full_name,
+              phone_number,
+              date,
+              time,
+              staff_ID,
+              service_ID,
+              other_type,
+              place_ID,
+              nationality,
+              status,
+              appointment_summary
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
 
           const values = [
             email,
+            student_code,
             full_name,
             phone,
-            date,
+            dateOnly,
             time,
             null, // staff_ID ยังไม่ assign
             service_ID,
@@ -104,6 +190,7 @@ module.exports = (db) => {
           });
         }
       );
+    });
   });
 
   /* =========================
@@ -222,6 +309,24 @@ module.exports = (db) => {
 
       res.json({ message: "Appointment cancelled" });
     });
+  });
+
+  /* =========================
+   *  list วันหยุดไทยของปี (ใช้กับ calendar frontend)
+   * ========================= */
+  router.get("/holidays", async (req, res) => {
+    try {
+      const year = Number(req.query.year || dayjs().year());
+      if (!year || Number.isNaN(year)) {
+        return res.status(400).json({ error: "Invalid year" });
+      }
+
+      const dates = await getThaiHolidaysFromDBOrGoogle(db, year);
+      res.json(dates); // ['2025-01-01', '2025-04-13', ...]
+    } catch (err) {
+      console.error("Error /holidays:", err);
+      res.status(500).json({ error: "Failed to fetch holidays" });
+    }
   });
 
   return router;

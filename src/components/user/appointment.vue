@@ -10,13 +10,47 @@
         <v-form ref="formRef" @submit.prevent="submitForm">
 
           <!-- วันที่ -->
-          <v-text-field v-model="form.date" type="date" :min="minDate" :rules="[v => !!v]" variant="outlined"
-            density="comfortable">
-            <template #label>
-              <span style="color:black">{{ t('appointment.date') }}</span>
-              <span style="color:red"> *</span>
+          <v-menu v-model="dateMenu" transition="scale-transition" offset-y :close-on-content-click="false"
+            :max-width="360">
+            <template #activator="{ props }">
+              <v-text-field v-bind="props" v-model="displayDate" variant="outlined" density="comfortable"
+                :rules="[v => !!v]" :readonly="true" prepend-inner-icon="mdi-calendar-outline">
+                <template #label>
+                  <span style="color:black">{{ t('appointment.date') }}</span>
+                  <span style="color:red"> *</span>
+                </template>
+              </v-text-field>
             </template>
-          </v-text-field>
+
+            <!-- กล่องปฏิทินให้ดูเป็น card ชัด ๆ -->
+            <v-card class="date-popover" rounded="xl" elevation="8">
+              <div class="header d-flex align-center justify-space-between">
+                <div class="text-subtitle-2 font-weight-medium">
+                  {{ t('appointment.select_date') }}
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ form.date ? dayjs(form.date).format('DD MMM YYYY') : '-' }}
+                </div>
+              </div>
+
+              <v-divider class="my-1" />
+
+              <v-date-picker v-model="form.date" :min="minDate" :max="maxDate" :allowed-dates="isAllowedDate"
+                color="#009199" elevation="0" hide-header @update:model-value="onDateSelected" />
+
+              <v-divider class="mt-1" />
+
+              <!-- แถวปุ่มด้านล่าง -->
+              <div class="d-flex justify-space-between align-center px-4 py-2 date-actions">
+                <v-btn size="small" variant="text" @click="clearDate">
+                  {{ t('common.clear') || 'Clear' }}
+                </v-btn>
+                <v-btn size="small" variant="text" @click="dateMenu = false">
+                  {{ t('common.done') || 'Done' }}
+                </v-btn>
+              </div>
+            </v-card>
+          </v-menu>
 
           <!-- เวลา -->
           <v-select v-model="form.time" :items="availableTimeOptions" item-title="label" item-value="value"
@@ -126,7 +160,7 @@
             </div>
 
             <div class="text-center">
-              <h3 class="text-h6 font-weight-bold" style="color:#009199;">
+              <h3 class="text-h6 font-weight-bold" style="color:#009199; white-space: pre-line;">
                 {{ t('appointment.success_alert') }}
               </h3>
             </div>
@@ -138,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineProps, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 
@@ -272,10 +306,6 @@ const channelOptions = computed(() => {
   }))
 })
 
-const minDate = computed(() =>
-  dayjs().add(1, 'day').format('YYYY-MM-DD')
-)
-
 /** places + default channel */
 const fetchPlaces = async () => {
   try {
@@ -296,6 +326,7 @@ const fetchPlaces = async () => {
 
 onMounted(async () => {
   await fetchPlaces()
+  await fetchHolidays();
   setDefaultChannel()
   fetchOccupiedTimes()
 })
@@ -341,7 +372,7 @@ const submitForm = async () => {
 
   const payload = {
     // full_name: form.value.fullName,
-    date: form.value.date,
+    date: dayjs(form.value.date).format('YYYY-MM-DD'),
     time: form.value.time,
     phone: form.value.phone,
     serviceType: form.value.serviceType,
@@ -414,6 +445,76 @@ const resetForm = async () => {
   formRef.value?.resetValidation()
   setDefaultChannel()
   occupiedTimes.value = []
+}
+
+const thaiHolidays = ref(new Set());
+
+const fetchHolidays = async () => {
+  try {
+    const year = dayjs().year();
+    const res = await axios.get('/api/user/holidays', { params: { year } });
+    thaiHolidays.value = new Set(res.data || []);
+  } catch (err) {
+    console.error('fetchHolidays error:', err?.response?.data || err.message);
+    // ถ้า error (เช่น 401) ก็ปล่อยให้ไม่มีวันหยุดไปก่อน
+    thaiHolidays.value = new Set();
+  }
+};
+
+const dateMenu = ref(false)
+
+const minDate = computed(() =>
+  dayjs().add(1, 'day').format('YYYY-MM-DD')
+)
+
+const maxDate = computed(() =>
+  dayjs().add(1, 'day').format('YYYY-MM-DD')
+)
+
+const isAllowedDate = (dateString) => {
+  const d = dayjs(dateString, 'YYYY-MM-DD', true)
+  if (!d.isValid()) return false
+
+  const tomorrow = dayjs().add(1, "day").startOf("day")
+
+  // อนุญาตเฉพาะ "วันพรุ่งนี้" วันเดียว
+  if (!d.isSame(tomorrow, 'day')) return false
+
+  // ถ้าวันพรุ่งนี้ดันเป็นเสาร์–อาทิตย์ → ปิด
+  const dow = d.day()
+  if (dow === 0 || dow === 6) return false
+
+  // ถ้าวันพรุ่งนี้เป็นวันหยุดนักขัตฤกษ์ → ปิด
+  if (thaiHolidays.value.has(d.format('YYYY-MM-DD'))) return false
+
+  return true
+}
+
+// แสดงผลในช่องเป็น DD/MM/YYYY แต่เก็บจริงใน form.date เป็น YYYY-MM-DD
+const displayDate = computed({
+  get() {
+    if (!form.value.date) return ''
+    return dayjs(form.value.date, 'YYYY-MM-DD').format('DD/MM/YYYY')
+  },
+  set(val) {
+    if (!val) {
+      form.value.date = ''
+      return
+    }
+    const d = dayjs(val, 'DD/MM/YYYY', true)
+    form.value.date = d.isValid() ? d.format('YYYY-MM-DD') : ''
+  }
+})
+
+// ปุ่ม Clear ในปฏิทิน
+const clearDate = () => {
+  form.value.date = ''
+  dateMenu.value = false
+}
+
+const onDateSelected = () => {
+  // เลือกวันแล้วปิดเมนู (displayDate จะอัปเดตอัตโนมัติจาก computed)
+  dateMenu.value = false
 }
 </script>
 
@@ -505,6 +606,53 @@ const resetForm = async () => {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* ทำให้ปฏิทินไม่กว้างเกินไป */
+.date-popover {
+  width: 90vw;
+  /* 90% ของหน้าจอมือถือ */
+  max-width: 320px;
+  /* สูงสุดแค่ 320px */
+  border-radius: 16px;
+  padding-bottom: 4px;
+}
+
+/* ลด padding ด้านบน */
+.date-popover .header {
+  padding: 12px 16px 4px 16px;
+}
+
+/* ลด padding ของ date-picker */
+.date-popover .v-date-picker {
+  padding: 0 4px 4px 4px !important;
+}
+
+/* ปุ่มล่าง */
+.date-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+}
+
+/* ขนาดปุ่มเล็กลง */
+.date-actions .v-btn {
+  font-size: 0.8rem;
+  min-width: 60px;
+  padding: 0 6px;
+}
+
+/* ตรงปฏิทินให้วันที่เล็กลง */
+.date-popover .v-date-picker-month__day {
+  font-size: 0.8rem !important;
+  width: 34px !important;
+  height: 34px !important;
+}
+
+@media (min-width: 600px) {
+  .date-popover {
+    width: 340px;
+    max-width: 360px;
   }
 }
 </style>
