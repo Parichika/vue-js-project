@@ -43,39 +43,25 @@
       </div>
     </v-row>
 
-    <!-- Bar Charts: type totals & completed -->
+    <!-- ALL CHARTS IN ONE DROPDOWN -->
     <v-row>
       <v-col cols="12" md="12">
         <v-card class="pa-4">
-          <div class="d-flex align-center mb-2">
-            <v-icon size="20" color="#009199" class="mr-2">mdi-folder-multiple</v-icon>
-            <h3 class="subtitle-1 mb-0">{{ t('dashboard.chart_type_all') }}</h3>
-          </div>
-          <Bar :data="barChartServiceTypeData" :options="barChartOptions" style="height:300px" />
-        </v-card>
-      </v-col>
-    </v-row>
+          <div class="d-flex align-center justify-space-between mb-4">
+            <!-- ชื่อกราฟ -->
+            <div class="d-flex align-center">
+              <v-icon size="20" color="#009199" class="mr-2">mdi-chart-bar</v-icon>
+              <h3 class="subtitle-1 mb-0">
+                {{ currentChartTitle }}
+              </h3>
+            </div>
 
-    <!-- Bar Charts by day/time -->
-    <v-row>
-      <v-col cols="12" md="12">
-        <v-card class="pa-4">
-          <h3 class="subtitle-1 mb-2">{{ t('dashboard.chart_by_time') }}</h3>
-          <Bar :data="barChartTimeData" :options="barChartOptions" style="height:300px" />
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- DROPDOWN: Year / Faculty -->
-    <v-row>
-      <v-col cols="12" md="12">
-        <v-card class="pa-4">
-          <div class="d-flex align-center mb-4">
-            <v-select v-model="selectedCategory" :items="categoryOptions" item-title="label" item-value="value"
-              :label="t('dashboard.pick_category')" variant="outlined" density="comfortable" style="width: 250px" />
+            <!-- เลือกกราฟ -->
+            <v-select v-model="selectedChart" :items="chartOptions" item-title="label" item-value="value"
+              :label="t('dashboard.pick_category')" variant="outlined" density="comfortable" style="max-width: 260px" />
           </div>
 
-          <Bar :data="selectedChartData" :options="barChartOptions" style="height:400px" />
+          <Bar :data="currentChartData" :options="barChartOptions" style="height:400px" />
         </v-card>
       </v-col>
     </v-row>
@@ -391,13 +377,45 @@ const barChartFacultyData = computed(() => {
   }
 })
 
-/* ———————————————— Dropdown Chart: Year / Faculty ———————————————— */
-const selectedCategory = ref("year");
+// ------------------ Dropdown เลือกกราฟทั้งหมด ------------------
+const selectedChart = ref('type_all')
 
-const categoryOptions = computed(() => [
+const chartOptions = computed(() => [
+  { label: t('dashboard.chart_type_all'), value: 'type_all' },
+  { label: t('dashboard.chart_by_time'), value: 'time' },
   { label: t('dashboard.chart_year'), value: 'year' },
   { label: t('dashboard.chart_faculty'), value: 'faculty' }
 ])
+
+const currentChartData = computed(() => {
+  switch (selectedChart.value) {
+    case 'type_all':
+      return barChartServiceTypeData.value
+    case 'time':
+      return barChartTimeData.value
+    case 'year':
+      return barChartYearData.value
+    case 'faculty':
+      return barChartFacultyData.value
+    default:
+      return barChartServiceTypeData.value
+  }
+})
+
+const currentChartTitle = computed(() => {
+  switch (selectedChart.value) {
+    case 'type_all':
+      return t('dashboard.chart_type_all')
+    case 'time':
+      return t('dashboard.chart_by_time')
+    case 'year':
+      return t('dashboard.chart_year')
+    case 'faculty':
+      return t('dashboard.chart_faculty')
+    default:
+      return t('dashboard.chart_type_all')
+  }
+})
 
 // ===== By Year (1-4) =====
 const YEAR_ORDER = [1, 2, 3, 4]

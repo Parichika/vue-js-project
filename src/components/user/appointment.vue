@@ -35,8 +35,8 @@
 
               <v-divider class="my-1" />
 
-              <v-date-picker v-model="form.date" :min="minDate" :max="maxDate" :allowed-dates="isAllowedDate"
-                color="#009199" elevation="0" hide-header @update:model-value="onDateSelected" />
+              <v-date-picker v-model="form.date" :min="minDate" :allowed-dates="isAllowedDate" color="#009199"
+                elevation="0" hide-header @update:model-value="onDateSelected" />
 
               <v-divider class="mt-1" />
 
@@ -447,19 +447,47 @@ const resetForm = async () => {
   occupiedTimes.value = []
 }
 
-const thaiHolidays = ref(new Set());
+// ---- แคชวันหยุดแยกตามปี (year -> Set<YYYY-MM-DD>) ----
+const holidaysByYear = ref({})      // { 2025: Set([...]), 2026: Set([...]) }
+const thaiHolidays = ref(new Set()) // รวมทุกปีเอาไว้ใช้เช็คใน isAllowedDate
 
+// รวมวันหยุดทุกปีใน holidaysByYear เข้าเป็นชุดเดียว
+const rebuildThaiHolidays = () => {
+  const all = []
+  Object.values(holidaysByYear.value).forEach((set) => {
+    if (set instanceof Set) {
+      all.push(...set)
+    }
+  })
+  thaiHolidays.value = new Set(all)
+}
+
+// ดึงวันหยุดของ "ปีเดียว" (เรียกแค่ครั้งแรกของปีนั้น)
+const fetchHolidaysForYear = async (year) => {
+  if (holidaysByYear.value[year]) return  // เคยโหลดแล้ว ไม่ต้องโหลดซ้ำ
+
+  try {
+    const res = await axios.get('/api/user/holidays', { params: { year } })
+    holidaysByYear.value[year] = new Set(res.data || [])
+    rebuildThaiHolidays()
+  } catch (err) {
+    console.error('fetchHolidaysForYear error:', year, err?.response?.data || err.message)
+  }
+}
+
+// preload วันหยุดช่วงหลายปีล่วงหน้า (ปรับจำนวนปีได้ตามต้องการ)
 const fetchHolidays = async () => {
   try {
-    const year = dayjs().year();
-    const res = await axios.get('/api/user/holidays', { params: { year } });
-    thaiHolidays.value = new Set(res.data || []);
+    const currentYear = dayjs().year()
+    const lastYear = currentYear + 10   // <<-- อยากรองรับกี่ปี ก็เปลี่ยนเลขนี้ เช่น +20
+
+    for (let y = currentYear; y <= lastYear; y++) {
+      await fetchHolidaysForYear(y)
+    }
   } catch (err) {
-    console.error('fetchHolidays error:', err?.response?.data || err.message);
-    // ถ้า error (เช่น 401) ก็ปล่อยให้ไม่มีวันหยุดไปก่อน
-    thaiHolidays.value = new Set();
+    console.error('fetchHolidays (range) error:', err?.response?.data || err.message)
   }
-};
+}
 
 const dateMenu = ref(false)
 
@@ -467,24 +495,20 @@ const minDate = computed(() =>
   dayjs().add(1, 'day').format('YYYY-MM-DD')
 )
 
-const maxDate = computed(() =>
-  dayjs().add(1, 'day').format('YYYY-MM-DD')
-)
-
 const isAllowedDate = (dateString) => {
   const d = dayjs(dateString, 'YYYY-MM-DD', true)
   if (!d.isValid()) return false
 
-  const tomorrow = dayjs().add(1, "day").startOf("day")
+  const today = dayjs().startOf('day')
 
-  // อนุญาตเฉพาะ "วันพรุ่งนี้" วันเดียว
-  if (!d.isSame(tomorrow, 'day')) return false
+  // ต้องเป็น "หลังวันนี้" → อย่างน้อยคือพรุ่งนี้ขึ้นไป
+  if (!d.isAfter(today, 'day')) return false
 
-  // ถ้าวันพรุ่งนี้ดันเป็นเสาร์–อาทิตย์ → ปิด
+  // ไม่ให้จองเสาร์–อาทิตย์
   const dow = d.day()
   if (dow === 0 || dow === 6) return false
 
-  // ถ้าวันพรุ่งนี้เป็นวันหยุดนักขัตฤกษ์ → ปิด
+  // ไม่ให้จองวันหยุดนักขัตฤกษ์
   if (thaiHolidays.value.has(d.format('YYYY-MM-DD'))) return false
 
   return true

@@ -84,12 +84,12 @@ module.exports = (db) => {
 
     // ต้องจองล่วงหน้าอย่างน้อย 1 วัน (ห้ามจองวันเดียวกันหรือย้อนหลัง)
     const today = dayjs().startOf("day");
-    const selectedDate = dayjs(date).startOf("day"); // ให้ dayjs แกะ ISO ให้เอง
-    const tomorrow = today.add(1, "day");
+    const selectedDate = dayjs(date).startOf("day"); // date มาจาก frontend ในรูป YYYY-MM-DD
 
-    if (!selectedDate.isValid() || !selectedDate.isSame(tomorrow, "day")) {
+    if (!selectedDate.isValid() || !selectedDate.isAfter(today, "day")) {
+      // ถ้าไม่ valid หรือ ไม่ได้เป็นวันหลังวันนี้ → ไม่ให้จอง
       return res.status(400).json({
-        error: "สามารถจองได้เฉพาะวันถัดไปเท่านั้น",
+        error: "ต้องจองล่วงหน้าอย่างน้อย 1 วัน",
       });
     }
 

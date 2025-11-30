@@ -129,7 +129,8 @@
     "summary_label": "Advice Summary",
     "summary_empty": "No summary yet",
     "staff_unassigned": "Not assigned yet",
-    "advice_placeholder": "e.g. Self-care steps, recommended resources, next session plan"
+    "advice_placeholder": "e.g. Self-care steps, recommended resources, next session plan",
+    "export_excel": "Export Excel"
   },
   "dashboard": {
     "title": "Counselling Request Report",
@@ -142,7 +143,6 @@
     "card_cancelled": "Cancelled",
     "chart_type_all": "Request Types (All)",
     "chart_type_completed": "Request Types (Completed)",
-    "chart_by_day": "Requests by Day",
     "chart_by_time": "Requests by Time",
     "ds_completed": "Completed",
     "ds_total": "Total",
@@ -183,7 +183,8 @@
     "end_date": "End date",
     "filter": "Filter",
     "clear": "Clear",
-    "pick_category": "Select category"
+    "pick_category": "Select category",
+    "unspecified": "Unspecified"
   },
   "common": {
     "on": "On",
