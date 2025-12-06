@@ -130,7 +130,8 @@
     "summary_empty": "No summary yet",
     "staff_unassigned": "Not assigned yet",
     "advice_placeholder": "e.g. Self-care steps, recommended resources, next session plan",
-    "export_excel": "Export Excel"
+    "export_excel": "Export Excel",
+    "export_all": "Export all"
   },
   "dashboard": {
     "title": "Counselling Request Report",

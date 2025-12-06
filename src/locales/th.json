@@ -130,7 +130,8 @@
     "summary_empty": "ยังไม่มีสรุป",
     "staff_unassigned": "ยังไม่มีผู้รับเคส",
     "advice_placeholder": "เช่น แนวทางดูแลตนเอง ทรัพยากรแนะนำ หรือแผนการนัดครั้งถัดไป",
-    "export_excel": "ส่งออกเป็นไฟล์ Excel"
+    "export_excel": "ส่งออกเป็นไฟล์ Excel",
+    "export_all": "ส่งออกทั้งหมด"
   },
   "dashboard": {
     "title": "รายงานคำขอเข้ารับบริการ",

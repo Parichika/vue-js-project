@@ -4,11 +4,11 @@
       <v-container>
 
         <!-- หัวข้อ -->
-        <v-row class="mb-4" justify="center">
+        <!-- <v-row class="mb-4" justify="center">
           <v-col cols="auto" class="text-center">
             <h2 class="text-h5 font-weight-bold mb-0">{{ t('adminReq.title') }}</h2>
           </v-col>
-        </v-row>
+        </v-row> -->
 
         <!-- ตารางการจอง -->
         <v-table style="table-layout: fixed;">

@@ -2,23 +2,23 @@
   <v-app>
     <v-main>
       <v-container>
-        <!-- หัวเรื่อง + ช่องค้นหา -->
+
         <v-row class="mb-4" align="center" justify="space-between">
-          <v-col cols="auto" class="text-center">
-            <h2 class="text-h5 font-weight-bold mb-0" style="color:#009199;">
-              {{ t('history.title') }}
-            </h2>
+          <!-- ช่องค้นหา (ซ้าย) -->
+          <v-col cols="12" sm="6" md="4" lg="3">
+            <v-text-field v-model="search" :label="t('history.search')" prepend-inner-icon="mdi-magnify"
+              variant="outlined" density="compact" hide-details clearable />
           </v-col>
 
-          <!-- ช่องค้นหา + ปุ่ม Export Excel อยู่ข้างกัน -->
-          <v-col cols="12" sm="5" md="4" lg="3" class="d-flex justify-end align-center search-export-box">
-            <v-text-field v-model="search" :label="t('history.search')" prepend-inner-icon="mdi-magnify"
-              variant="outlined" density="compact" hide-details style="min-height:38px; max-width:260px;" clearable />
-
-            <!-- ปุ่ม Export Excel -->
-            <v-btn icon variant="tonal" color="green-darken-1" class="export-btn"
-              :title="t('history.export_excel') || 'Export Excel'" @click="exportXlsx">
-              <v-icon>mdi-file-excel</v-icon>
+          <!-- ปุ่ม Export (ขวา) -->
+          <v-col cols="12" sm="6" md="4" lg="3" class="d-flex justify-end align-center">
+            <v-btn color="green-darken-1" variant="tonal" class="export-btn" :title="t('history.export_all')"
+              @click="exportXlsx">
+              <v-icon start>mdi-file-excel</v-icon>
+              <!-- ซ่อนข้อความบนจอเล็ก ให้เหลือแต่ไอคอน -->
+              <span class="d-none d-sm-inline">
+                {{ t('history.export_all') }}
+              </span>
             </v-btn>
           </v-col>
         </v-row>
@@ -463,9 +463,8 @@ tbody tr.hoverable-row:focus-within {
 }
 
 .export-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  border-radius: 999px;
+  padding-inline: 16px;
 }
 
 .advice-actions {
