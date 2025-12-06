@@ -1,0 +1,20 @@
+ACCESS_SECRET=
+DB_HOST=localhost
+DB_USER=counselling
+DB_PASS=
+DB_NAME=counselling-queue
+PORT=3000
+
+# ==== JWT ====
+ACCESS_SECRET=
+
+MAX_USERS_PER_SLOT=2
+
+ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000
+
+# ==== GOOGLE SERVICE ACCOUNT ====
+GOOGLE_PROJECT_ID=counselling-queue-mfu
+GOOGLE_CLIENT_EMAIL=
+GOOGLE_PRIVATE_KEY=
+GOOGLE_PRIVATE_KEY_ID=
+GOOGLE_CLIENT_ID=
